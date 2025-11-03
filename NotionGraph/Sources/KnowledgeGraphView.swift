@@ -43,8 +43,18 @@ struct D3WebView: NSViewRepresentable {
 
     private func generateHTML() -> String {
         let graphData = GraphData(nodes: nodes, links: links)
-        let jsonData = try! JSONEncoder().encode(graphData)
-        let jsonString = String(data: jsonData, encoding: .utf8)!
+
+        // Safely encode the graph data
+        guard let jsonData = try? JSONEncoder().encode(graphData),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            // Return empty graph if encoding fails
+            return generateHTMLWithData("{\"nodes\":[],\"links\":[]}")
+        }
+
+        return generateHTMLWithData(jsonString)
+    }
+
+    private func generateHTMLWithData(_ jsonString: String) -> String {
 
         return """
         <!DOCTYPE html>
@@ -255,8 +265,18 @@ struct D3WebView: UIViewRepresentable {
 
     private func generateHTML() -> String {
         let graphData = GraphData(nodes: nodes, links: links)
-        let jsonData = try! JSONEncoder().encode(graphData)
-        let jsonString = String(data: jsonData, encoding: .utf8)!
+
+        // Safely encode the graph data
+        guard let jsonData = try? JSONEncoder().encode(graphData),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            // Return empty graph if encoding fails
+            return generateHTMLWithData("{\"nodes\":[],\"links\":[]}")
+        }
+
+        return generateHTMLWithData(jsonString)
+    }
+
+    private func generateHTMLWithData(_ jsonString: String) -> String {
 
         return """
         <!DOCTYPE html>

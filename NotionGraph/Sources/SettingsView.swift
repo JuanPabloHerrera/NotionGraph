@@ -27,8 +27,11 @@ struct SettingsView: View {
                         Text("2. Create a new integration")
                         Text("3. Copy the Internal Integration Token")
                         Text("\nTo get your Database ID:")
-                        Text("Open your database in Notion and copy the ID from the URL:")
-                        Text("notion.so/[workspace]/[DATABASE_ID]?v=...")
+                        Text("1. Open your database in Notion")
+                        Text("2. Copy the URL or just the database ID")
+                        Text("   Example: notion.so/workspace/DATABASE_ID?v=...")
+                        Text("3. You can paste the full URL or just the ID")
+                        Text("\nDon't forget to share the database with your integration!")
                     }
                     .font(.caption)
                     .foregroundColor(.secondary)

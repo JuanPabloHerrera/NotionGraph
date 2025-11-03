@@ -24,7 +24,13 @@ class NotionService: ObservableObject {
         error = nil
 
         do {
-            let url = URL(string: "\(baseURL)/databases/\(databaseId)/query")!
+            // Normalize the database ID by removing dashes and ensuring proper format
+            let normalizedId = normalizeDatabaseId(databaseId)
+
+            guard let url = URL(string: "\(baseURL)/databases/\(normalizedId)/query") else {
+                throw NotionError.apiError(statusCode: 400, message: "Invalid database ID format")
+            }
+
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -55,6 +61,45 @@ class NotionService: ObservableObject {
             self.error = error.localizedDescription
             isLoading = false
         }
+    }
+
+    private func normalizeDatabaseId(_ id: String) -> String {
+        // Remove common URL prefixes and clean the ID
+        var cleanId = id.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Remove any URL prefix if present
+        if let urlComponents = URLComponents(string: cleanId),
+           let path = urlComponents.path.split(separator: "/").last {
+            cleanId = String(path)
+        }
+
+        // Extract just the ID part if there's a query string
+        if let questionMarkIndex = cleanId.firstIndex(of: "?") {
+            cleanId = String(cleanId[..<questionMarkIndex])
+        }
+
+        // Remove all dashes to get the raw ID
+        let rawId = cleanId.replacingOccurrences(of: "-", with: "")
+
+        // Notion IDs should be 32 characters (hex). If we have that, format it properly
+        if rawId.count == 32 {
+            // Insert dashes to make it a proper UUID format
+            let index8 = rawId.index(rawId.startIndex, offsetBy: 8)
+            let index12 = rawId.index(rawId.startIndex, offsetBy: 12)
+            let index16 = rawId.index(rawId.startIndex, offsetBy: 16)
+            let index20 = rawId.index(rawId.startIndex, offsetBy: 20)
+
+            let part1 = String(rawId[..<index8])
+            let part2 = String(rawId[index8..<index12])
+            let part3 = String(rawId[index12..<index16])
+            let part4 = String(rawId[index16..<index20])
+            let part5 = String(rawId[index20...])
+
+            return "\(part1)-\(part2)-\(part3)-\(part4)-\(part5)"
+        }
+
+        // If already in correct format or different length, return as is
+        return cleanId
     }
 
     private func processPages(_ pages: [NotionPage]) {

@@ -90,7 +90,6 @@ class NotionService: ObservableObject {
                         let mentions = extractPageMentions(from: block)
                         for mentionId in mentions {
                             allMentions.append((sourceId: page.id, targetId: mentionId))
-                            print("Found page mention in '\(page.title)': \(mentionId)")
                         }
                     }
                 }
@@ -206,8 +205,6 @@ class NotionService: ObservableObject {
             graphNodes.append(node)
         }
 
-        print("Created \(graphNodes.count) nodes")
-
         // Create links from relation properties
         for page in pages {
             let sourceId = page.id
@@ -225,8 +222,6 @@ class NotionService: ObservableObject {
             }
         }
 
-        print("Created \(graphLinks.count) links from relation properties")
-
         // Create links from page mentions in content
         for mention in mentions {
             // Only create link if both source and target exist in our nodes
@@ -240,8 +235,6 @@ class NotionService: ObservableObject {
                 graphLinks.append(link)
             }
         }
-
-        print("Total nodes: \(graphNodes.count), Total links: \(graphLinks.count) (including \(mentions.count) page mentions)")
 
         self.nodes = graphNodes
         self.links = graphLinks

@@ -89,9 +89,9 @@ struct D3WebView: NSViewRepresentable {
                     dominant-baseline: middle;
                 }
                 .link {
-                    stroke: #6b7280;
+                    stroke: #e5e7eb;
                     stroke-opacity: 1;
-                    stroke-width: 2.5px;
+                    stroke-width: 1px;
                     fill: none;
                 }
             </style>
@@ -129,22 +129,16 @@ struct D3WebView: NSViewRepresentable {
                     .force("y", d3.forceY(height / 2).strength(0.1))
                     .force("collision", d3.forceCollide().radius(35));
 
-                // Debug: log link count and data
-                console.log("Nodes:", data.nodes.length, "Links:", data.links.length);
-                console.log("Link data:", data.links);
-
                 const link = g.append("g")
                     .attr("class", "links")
                     .selectAll("line")
                     .data(data.links)
                     .join("line")
                     .attr("class", "link")
-                    .attr("stroke", "#ff0000")  // Temporarily red for debugging
-                    .attr("stroke-width", 5)     // Temporarily thick for debugging
+                    .attr("stroke", "#e5e7eb")
+                    .attr("stroke-width", 1)
                     .attr("fill", "none")
                     .attr("stroke-opacity", 1);
-
-                console.log("Created", link.size(), "link elements");
 
                 const node = g.append("g")
                     .selectAll("g")
@@ -349,9 +343,9 @@ struct D3WebView: UIViewRepresentable {
                     dominant-baseline: middle;
                 }
                 .link {
-                    stroke: #6b7280;
+                    stroke: #e5e7eb;
                     stroke-opacity: 1;
-                    stroke-width: 2.5px;
+                    stroke-width: 1px;
                     fill: none;
                 }
             </style>
@@ -389,22 +383,16 @@ struct D3WebView: UIViewRepresentable {
                     .force("y", d3.forceY(height / 2).strength(0.1))
                     .force("collision", d3.forceCollide().radius(35));
 
-                // Debug: log link count and data
-                console.log("Nodes:", data.nodes.length, "Links:", data.links.length);
-                console.log("Link data:", data.links);
-
                 const link = g.append("g")
                     .attr("class", "links")
                     .selectAll("line")
                     .data(data.links)
                     .join("line")
                     .attr("class", "link")
-                    .attr("stroke", "#ff0000")  // Temporarily red for debugging
-                    .attr("stroke-width", 5)     // Temporarily thick for debugging
+                    .attr("stroke", "#e5e7eb")
+                    .attr("stroke-width", 1)
                     .attr("fill", "none")
                     .attr("stroke-opacity", 1);
-
-                console.log("Created", link.size(), "link elements");
 
                 const node = g.append("g")
                     .selectAll("g")

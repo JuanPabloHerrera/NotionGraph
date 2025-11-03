@@ -53,7 +53,6 @@ struct ContentView: View {
             #if os(macOS)
             .navigationSubtitle("")
             .toolbarBackground(Color(hex: "#fafafa"), for: .windowToolbar)
-            .toolbarBackground(.visible, for: .windowToolbar)
             #endif
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {

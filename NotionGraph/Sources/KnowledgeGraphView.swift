@@ -7,7 +7,11 @@ struct KnowledgeGraphView: View {
 
     var body: some View {
         D3WebView(nodes: nodes, links: links)
+            #if os(macOS)
+            .ignoresSafeArea(edges: .bottom)
+            #else
             .ignoresSafeArea()
+            #endif
     }
 }
 

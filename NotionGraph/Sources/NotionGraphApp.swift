@@ -11,6 +11,7 @@ struct NotionGraphApp: App {
         }
         #if os(macOS)
         .defaultSize(width: 900, height: 600)
+        .windowToolbarStyle(.unified(showsTitle: true))
         #endif
     }
 }

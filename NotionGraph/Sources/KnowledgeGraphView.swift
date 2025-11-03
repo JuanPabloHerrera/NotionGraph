@@ -89,9 +89,9 @@ struct D3WebView: NSViewRepresentable {
                     dominant-baseline: middle;
                 }
                 .link {
-                    stroke: #9ca3af;
+                    stroke: #6b7280;
                     stroke-opacity: 1;
-                    stroke-width: 2px;
+                    stroke-width: 2.5px;
                     fill: none;
                 }
             </style>
@@ -138,8 +138,9 @@ struct D3WebView: NSViewRepresentable {
                     .data(data.links)
                     .join("line")
                     .attr("class", "link")
-                    .attr("stroke", "#9ca3af")
-                    .attr("stroke-width", 2);
+                    .attr("stroke", "#6b7280")
+                    .attr("stroke-width", 2.5)
+                    .attr("fill", "none");
 
                 const node = g.append("g")
                     .selectAll("g")
@@ -344,9 +345,9 @@ struct D3WebView: UIViewRepresentable {
                     dominant-baseline: middle;
                 }
                 .link {
-                    stroke: #9ca3af;
+                    stroke: #6b7280;
                     stroke-opacity: 1;
-                    stroke-width: 2px;
+                    stroke-width: 2.5px;
                     fill: none;
                 }
             </style>
@@ -393,8 +394,9 @@ struct D3WebView: UIViewRepresentable {
                     .data(data.links)
                     .join("line")
                     .attr("class", "link")
-                    .attr("stroke", "#9ca3af")
-                    .attr("stroke-width", 2);
+                    .attr("stroke", "#6b7280")
+                    .attr("stroke-width", 2.5)
+                    .attr("fill", "none");
 
                 const node = g.append("g")
                     .selectAll("g")

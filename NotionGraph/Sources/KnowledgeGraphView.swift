@@ -1,0 +1,438 @@
+import SwiftUI
+import WebKit
+
+struct KnowledgeGraphView: View {
+    let nodes: [GraphNode]
+    let links: [GraphLink]
+
+    var body: some View {
+        D3WebView(nodes: nodes, links: links)
+            .ignoresSafeArea()
+    }
+}
+
+#if os(macOS)
+struct D3WebView: NSViewRepresentable {
+    let nodes: [GraphNode]
+    let links: [GraphLink]
+
+    func makeNSView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        webView.navigationDelegate = context.coordinator
+        return webView
+    }
+
+    func updateNSView(_ nsView: WKWebView, context: Context) {
+        loadGraph(in: nsView)
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    class Coordinator: NSObject, WKNavigationDelegate {
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            print("Graph loaded successfully")
+        }
+    }
+
+    private func loadGraph(in webView: WKWebView) {
+        let html = generateHTML()
+        webView.loadHTMLString(html, baseURL: nil)
+    }
+
+    private func generateHTML() -> String {
+        let graphData = GraphData(nodes: nodes, links: links)
+        let jsonData = try! JSONEncoder().encode(graphData)
+        let jsonString = String(data: jsonData, encoding: .utf8)!
+
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    overflow: hidden;
+                    background: #1a1a1a;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                }
+                #graph {
+                    width: 100vw;
+                    height: 100vh;
+                }
+                .node {
+                    cursor: pointer;
+                }
+                .node circle {
+                    stroke: #fff;
+                    stroke-width: 2px;
+                }
+                .node text {
+                    font-size: 12px;
+                    fill: #ffffff;
+                    pointer-events: none;
+                    text-anchor: middle;
+                    dominant-baseline: middle;
+                }
+                .link {
+                    stroke: #999;
+                    stroke-opacity: 0.6;
+                    stroke-width: 2px;
+                }
+                .tooltip {
+                    position: absolute;
+                    padding: 8px;
+                    background: rgba(0, 0, 0, 0.8);
+                    color: white;
+                    border-radius: 4px;
+                    pointer-events: none;
+                    font-size: 12px;
+                    display: none;
+                }
+            </style>
+        </head>
+        <body>
+            <div id="graph"></div>
+            <div class="tooltip" id="tooltip"></div>
+            <script src="https://d3js.org/d3.v7.min.js"></script>
+            <script>
+                const data = \(jsonString);
+
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+
+                const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+                const svg = d3.select("#graph")
+                    .append("svg")
+                    .attr("width", width)
+                    .attr("height", height)
+                    .attr("viewBox", [0, 0, width, height]);
+
+                // Add zoom behavior
+                const g = svg.append("g");
+
+                svg.call(d3.zoom()
+                    .extent([[0, 0], [width, height]])
+                    .scaleExtent([0.1, 8])
+                    .on("zoom", (event) => {
+                        g.attr("transform", event.transform);
+                    }));
+
+                const simulation = d3.forceSimulation(data.nodes)
+                    .force("link", d3.forceLink(data.links).id(d => d.id).distance(100))
+                    .force("charge", d3.forceManyBody().strength(-300))
+                    .force("center", d3.forceCenter(width / 2, height / 2))
+                    .force("collision", d3.forceCollide().radius(30));
+
+                const link = g.append("g")
+                    .selectAll("line")
+                    .data(data.links)
+                    .join("line")
+                    .attr("class", "link");
+
+                const node = g.append("g")
+                    .selectAll("g")
+                    .data(data.nodes)
+                    .join("g")
+                    .attr("class", "node")
+                    .call(drag(simulation));
+
+                node.append("circle")
+                    .attr("r", 8)
+                    .attr("fill", d => color(d.group));
+
+                node.append("text")
+                    .attr("dy", 20)
+                    .text(d => d.name)
+                    .style("font-size", "10px")
+                    .style("fill", "#ffffff");
+
+                const tooltip = d3.select("#tooltip");
+
+                node.on("mouseover", function(event, d) {
+                    tooltip.style("display", "block")
+                        .html(`<strong>${d.name}</strong><br/>ID: ${d.id}`)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 10) + "px");
+
+                    d3.select(this).select("circle")
+                        .transition()
+                        .duration(200)
+                        .attr("r", 12);
+                })
+                .on("mouseout", function() {
+                    tooltip.style("display", "none");
+                    d3.select(this).select("circle")
+                        .transition()
+                        .duration(200)
+                        .attr("r", 8);
+                })
+                .on("click", function(event, d) {
+                    console.log("Clicked node:", d.name);
+                });
+
+                simulation.on("tick", () => {
+                    link
+                        .attr("x1", d => d.source.x)
+                        .attr("y1", d => d.source.y)
+                        .attr("x2", d => d.target.x)
+                        .attr("y2", d => d.target.y);
+
+                    node.attr("transform", d => `translate(${d.x},${d.y})`);
+                });
+
+                function drag(simulation) {
+                    function dragstarted(event) {
+                        if (!event.active) simulation.alphaTarget(0.3).restart();
+                        event.subject.fx = event.subject.x;
+                        event.subject.fy = event.subject.y;
+                    }
+
+                    function dragged(event) {
+                        event.subject.fx = event.x;
+                        event.subject.fy = event.y;
+                    }
+
+                    function dragended(event) {
+                        if (!event.active) simulation.alphaTarget(0);
+                        event.subject.fx = null;
+                        event.subject.fy = null;
+                    }
+
+                    return d3.drag()
+                        .on("start", dragstarted)
+                        .on("drag", dragged)
+                        .on("end", dragended);
+                }
+
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    const newWidth = window.innerWidth;
+                    const newHeight = window.innerHeight;
+                    svg.attr("width", newWidth).attr("height", newHeight);
+                    simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2));
+                    simulation.alpha(0.3).restart();
+                });
+            </script>
+        </body>
+        </html>
+        """
+    }
+}
+#else
+struct D3WebView: UIViewRepresentable {
+    let nodes: [GraphNode]
+    let links: [GraphLink]
+
+    func makeUIView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        webView.navigationDelegate = context.coordinator
+        return webView
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {
+        loadGraph(in: uiView)
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    class Coordinator: NSObject, WKNavigationDelegate {
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            print("Graph loaded successfully")
+        }
+    }
+
+    private func loadGraph(in webView: WKWebView) {
+        let html = generateHTML()
+        webView.loadHTMLString(html, baseURL: nil)
+    }
+
+    private func generateHTML() -> String {
+        let graphData = GraphData(nodes: nodes, links: links)
+        let jsonData = try! JSONEncoder().encode(graphData)
+        let jsonString = String(data: jsonData, encoding: .utf8)!
+
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    overflow: hidden;
+                    background: #1a1a1a;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                }
+                #graph {
+                    width: 100vw;
+                    height: 100vh;
+                }
+                .node {
+                    cursor: pointer;
+                }
+                .node circle {
+                    stroke: #fff;
+                    stroke-width: 2px;
+                }
+                .node text {
+                    font-size: 12px;
+                    fill: #ffffff;
+                    pointer-events: none;
+                    text-anchor: middle;
+                    dominant-baseline: middle;
+                }
+                .link {
+                    stroke: #999;
+                    stroke-opacity: 0.6;
+                    stroke-width: 2px;
+                }
+                .tooltip {
+                    position: absolute;
+                    padding: 8px;
+                    background: rgba(0, 0, 0, 0.8);
+                    color: white;
+                    border-radius: 4px;
+                    pointer-events: none;
+                    font-size: 12px;
+                    display: none;
+                }
+            </style>
+        </head>
+        <body>
+            <div id="graph"></div>
+            <div class="tooltip" id="tooltip"></div>
+            <script src="https://d3js.org/d3.v7.min.js"></script>
+            <script>
+                const data = \(jsonString);
+
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+
+                const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+                const svg = d3.select("#graph")
+                    .append("svg")
+                    .attr("width", width)
+                    .attr("height", height)
+                    .attr("viewBox", [0, 0, width, height]);
+
+                // Add zoom behavior
+                const g = svg.append("g");
+
+                svg.call(d3.zoom()
+                    .extent([[0, 0], [width, height]])
+                    .scaleExtent([0.1, 8])
+                    .on("zoom", (event) => {
+                        g.attr("transform", event.transform);
+                    }));
+
+                const simulation = d3.forceSimulation(data.nodes)
+                    .force("link", d3.forceLink(data.links).id(d => d.id).distance(100))
+                    .force("charge", d3.forceManyBody().strength(-300))
+                    .force("center", d3.forceCenter(width / 2, height / 2))
+                    .force("collision", d3.forceCollide().radius(30));
+
+                const link = g.append("g")
+                    .selectAll("line")
+                    .data(data.links)
+                    .join("line")
+                    .attr("class", "link");
+
+                const node = g.append("g")
+                    .selectAll("g")
+                    .data(data.nodes)
+                    .join("g")
+                    .attr("class", "node")
+                    .call(drag(simulation));
+
+                node.append("circle")
+                    .attr("r", 8)
+                    .attr("fill", d => color(d.group));
+
+                node.append("text")
+                    .attr("dy", 20)
+                    .text(d => d.name)
+                    .style("font-size", "10px")
+                    .style("fill", "#ffffff");
+
+                const tooltip = d3.select("#tooltip");
+
+                node.on("touchstart click", function(event, d) {
+                    event.preventDefault();
+                    tooltip.style("display", "block")
+                        .html(`<strong>${d.name}</strong><br/>ID: ${d.id}`)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 10) + "px");
+
+                    d3.select(this).select("circle")
+                        .transition()
+                        .duration(200)
+                        .attr("r", 12);
+
+                    setTimeout(() => {
+                        tooltip.style("display", "none");
+                        d3.select(this).select("circle")
+                            .transition()
+                            .duration(200)
+                            .attr("r", 8);
+                    }, 3000);
+                });
+
+                simulation.on("tick", () => {
+                    link
+                        .attr("x1", d => d.source.x)
+                        .attr("y1", d => d.source.y)
+                        .attr("x2", d => d.target.x)
+                        .attr("y2", d => d.target.y);
+
+                    node.attr("transform", d => `translate(${d.x},${d.y})`);
+                });
+
+                function drag(simulation) {
+                    function dragstarted(event) {
+                        if (!event.active) simulation.alphaTarget(0.3).restart();
+                        event.subject.fx = event.subject.x;
+                        event.subject.fy = event.subject.y;
+                    }
+
+                    function dragged(event) {
+                        event.subject.fx = event.x;
+                        event.subject.fy = event.y;
+                    }
+
+                    function dragended(event) {
+                        if (!event.active) simulation.alphaTarget(0);
+                        event.subject.fx = null;
+                        event.subject.fy = null;
+                    }
+
+                    return d3.drag()
+                        .on("start", dragstarted)
+                        .on("drag", dragged)
+                        .on("end", dragended);
+                }
+
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    const newWidth = window.innerWidth;
+                    const newHeight = window.innerHeight;
+                    svg.attr("width", newWidth).attr("height", newHeight);
+                    simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2));
+                    simulation.alpha(0.3).restart();
+                });
+            </script>
+        </body>
+        </html>
+        """
+    }
+}
+#endif

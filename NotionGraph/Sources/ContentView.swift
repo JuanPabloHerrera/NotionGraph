@@ -50,6 +50,10 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("Notion Knowledge Graph")
+            #if os(macOS)
+            .navigationSubtitle("")
+            .toolbarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {

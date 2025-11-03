@@ -89,9 +89,10 @@ struct D3WebView: NSViewRepresentable {
                     dominant-baseline: middle;
                 }
                 .link {
-                    stroke: #d1d5db;
+                    stroke: #9ca3af;
                     stroke-opacity: 1;
                     stroke-width: 2px;
+                    fill: none;
                 }
             </style>
         </head>
@@ -128,11 +129,17 @@ struct D3WebView: NSViewRepresentable {
                     .force("y", d3.forceY(height / 2).strength(0.1))
                     .force("collision", d3.forceCollide().radius(35));
 
+                // Debug: log link count
+                console.log("Nodes:", data.nodes.length, "Links:", data.links.length);
+
                 const link = g.append("g")
+                    .attr("class", "links")
                     .selectAll("line")
                     .data(data.links)
                     .join("line")
-                    .attr("class", "link");
+                    .attr("class", "link")
+                    .attr("stroke", "#9ca3af")
+                    .attr("stroke-width", 2);
 
                 const node = g.append("g")
                     .selectAll("g")
@@ -337,9 +344,10 @@ struct D3WebView: UIViewRepresentable {
                     dominant-baseline: middle;
                 }
                 .link {
-                    stroke: #d1d5db;
+                    stroke: #9ca3af;
                     stroke-opacity: 1;
                     stroke-width: 2px;
+                    fill: none;
                 }
             </style>
         </head>
@@ -376,11 +384,17 @@ struct D3WebView: UIViewRepresentable {
                     .force("y", d3.forceY(height / 2).strength(0.1))
                     .force("collision", d3.forceCollide().radius(35));
 
+                // Debug: log link count
+                console.log("Nodes:", data.nodes.length, "Links:", data.links.length);
+
                 const link = g.append("g")
+                    .attr("class", "links")
                     .selectAll("line")
                     .data(data.links)
                     .join("line")
-                    .attr("class", "link");
+                    .attr("class", "link")
+                    .attr("stroke", "#9ca3af")
+                    .attr("stroke-width", 2);
 
                 const node = g.append("g")
                     .selectAll("g")

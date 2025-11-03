@@ -89,9 +89,9 @@ struct D3WebView: NSViewRepresentable {
                     dominant-baseline: middle;
                 }
                 .link {
-                    stroke: #e5e7eb;
+                    stroke: #d1d5db;
                     stroke-opacity: 1;
-                    stroke-width: 1.5px;
+                    stroke-width: 2px;
                 }
             </style>
         </head>
@@ -103,12 +103,6 @@ struct D3WebView: NSViewRepresentable {
 
                 const width = window.innerWidth;
                 const height = window.innerHeight;
-
-                // Notion-style light gray color palette
-                const color = d3.scaleOrdinal([
-                    "#e5e7eb", "#d1d5db", "#c7ccd1", "#b8bdc3", "#e8eaed",
-                    "#dfe2e6", "#d4d7db", "#caced3", "#e3e5e8", "#dadde1"
-                ]);
 
                 const svg = d3.select("#graph")
                     .append("svg")
@@ -149,7 +143,7 @@ struct D3WebView: NSViewRepresentable {
 
                 node.append("circle")
                     .attr("r", 6)
-                    .attr("fill", d => color(d.group));
+                    .attr("fill", "#e5e7eb");
 
                 node.append("text")
                     .attr("dy", 18)
@@ -343,9 +337,9 @@ struct D3WebView: UIViewRepresentable {
                     dominant-baseline: middle;
                 }
                 .link {
-                    stroke: #e5e7eb;
+                    stroke: #d1d5db;
                     stroke-opacity: 1;
-                    stroke-width: 1.5px;
+                    stroke-width: 2px;
                 }
             </style>
         </head>
@@ -357,12 +351,6 @@ struct D3WebView: UIViewRepresentable {
 
                 const width = window.innerWidth;
                 const height = window.innerHeight;
-
-                // Notion-style light gray color palette
-                const color = d3.scaleOrdinal([
-                    "#e5e7eb", "#d1d5db", "#c7ccd1", "#b8bdc3", "#e8eaed",
-                    "#dfe2e6", "#d4d7db", "#caced3", "#e3e5e8", "#dadde1"
-                ]);
 
                 const svg = d3.select("#graph")
                     .append("svg")

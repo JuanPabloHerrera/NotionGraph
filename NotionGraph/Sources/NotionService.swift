@@ -115,6 +115,9 @@ class NotionService: ObservableObject {
                 group: index % 10 + 1 // Distribute across groups for coloring
             )
             graphNodes.append(node)
+
+            // Debug: Print page info
+            print("Page: \(page.title), Relations: \(page.relations.count)")
         }
 
         // Create links from relations
@@ -131,9 +134,12 @@ class NotionService: ObservableObject {
                         value: 1
                     )
                     graphLinks.append(link)
+                    print("Created link: \(page.title) -> \(targetId)")
                 }
             }
         }
+
+        print("Total nodes: \(graphNodes.count), Total links: \(graphLinks.count)")
 
         self.nodes = graphNodes
         self.links = graphLinks

@@ -129,8 +129,9 @@ struct D3WebView: NSViewRepresentable {
                     .force("y", d3.forceY(height / 2).strength(0.1))
                     .force("collision", d3.forceCollide().radius(35));
 
-                // Debug: log link count
+                // Debug: log link count and data
                 console.log("Nodes:", data.nodes.length, "Links:", data.links.length);
+                console.log("Link data:", data.links);
 
                 const link = g.append("g")
                     .attr("class", "links")
@@ -138,9 +139,12 @@ struct D3WebView: NSViewRepresentable {
                     .data(data.links)
                     .join("line")
                     .attr("class", "link")
-                    .attr("stroke", "#6b7280")
-                    .attr("stroke-width", 2.5)
-                    .attr("fill", "none");
+                    .attr("stroke", "#ff0000")  // Temporarily red for debugging
+                    .attr("stroke-width", 5)     // Temporarily thick for debugging
+                    .attr("fill", "none")
+                    .attr("stroke-opacity", 1);
+
+                console.log("Created", link.size(), "link elements");
 
                 const node = g.append("g")
                     .selectAll("g")
@@ -385,8 +389,9 @@ struct D3WebView: UIViewRepresentable {
                     .force("y", d3.forceY(height / 2).strength(0.1))
                     .force("collision", d3.forceCollide().radius(35));
 
-                // Debug: log link count
+                // Debug: log link count and data
                 console.log("Nodes:", data.nodes.length, "Links:", data.links.length);
+                console.log("Link data:", data.links);
 
                 const link = g.append("g")
                     .attr("class", "links")
@@ -394,9 +399,12 @@ struct D3WebView: UIViewRepresentable {
                     .data(data.links)
                     .join("line")
                     .attr("class", "link")
-                    .attr("stroke", "#6b7280")
-                    .attr("stroke-width", 2.5)
-                    .attr("fill", "none");
+                    .attr("stroke", "#ff0000")  // Temporarily red for debugging
+                    .attr("stroke-width", 5)     // Temporarily thick for debugging
+                    .attr("fill", "none")
+                    .attr("stroke-opacity", 1);
+
+                console.log("Created", link.size(), "link elements");
 
                 const node = g.append("g")
                     .selectAll("g")

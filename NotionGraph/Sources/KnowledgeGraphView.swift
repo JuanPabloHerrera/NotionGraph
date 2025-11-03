@@ -66,7 +66,7 @@ struct D3WebView: NSViewRepresentable {
                     margin: 0;
                     padding: 0;
                     overflow: hidden;
-                    background: #ffffff;
+                    background: #fafafa;
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 }
                 #graph {
@@ -77,21 +77,21 @@ struct D3WebView: NSViewRepresentable {
                     cursor: pointer;
                 }
                 .node circle {
-                    stroke: #333;
-                    stroke-width: 1px;
+                    stroke: #d1d5db;
+                    stroke-width: 1.5px;
                 }
                 .node text {
                     font-size: 11px;
                     font-weight: 400;
-                    fill: #333;
+                    fill: #37352f;
                     pointer-events: none;
                     text-anchor: middle;
                     dominant-baseline: middle;
                 }
                 .link {
-                    stroke: #ddd;
-                    stroke-opacity: 0.8;
-                    stroke-width: 1px;
+                    stroke: #e5e7eb;
+                    stroke-opacity: 1;
+                    stroke-width: 1.5px;
                 }
             </style>
         </head>
@@ -104,10 +104,10 @@ struct D3WebView: NSViewRepresentable {
                 const width = window.innerWidth;
                 const height = window.innerHeight;
 
-                // Minimal pastel color palette
+                // Notion-style light gray color palette
                 const color = d3.scaleOrdinal([
-                    "#a8dadc", "#457b9d", "#1d3557", "#f1faee", "#e63946",
-                    "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51", "#264653"
+                    "#e5e7eb", "#d1d5db", "#c7ccd1", "#b8bdc3", "#e8eaed",
+                    "#dfe2e6", "#d4d7db", "#caced3", "#e3e5e8", "#dadde1"
                 ]);
 
                 const svg = d3.select("#graph")
@@ -155,7 +155,7 @@ struct D3WebView: NSViewRepresentable {
                     .attr("dy", 18)
                     .text(d => d.name)
                     .style("font-size", "11px")
-                    .style("fill", "#333");
+                    .style("fill", "#37352f");
 
                 let hasZoomed = false;
 
@@ -320,7 +320,7 @@ struct D3WebView: UIViewRepresentable {
                     margin: 0;
                     padding: 0;
                     overflow: hidden;
-                    background: #ffffff;
+                    background: #fafafa;
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 }
                 #graph {
@@ -331,21 +331,21 @@ struct D3WebView: UIViewRepresentable {
                     cursor: pointer;
                 }
                 .node circle {
-                    stroke: #333;
-                    stroke-width: 1px;
+                    stroke: #d1d5db;
+                    stroke-width: 1.5px;
                 }
                 .node text {
                     font-size: 11px;
                     font-weight: 400;
-                    fill: #333;
+                    fill: #37352f;
                     pointer-events: none;
                     text-anchor: middle;
                     dominant-baseline: middle;
                 }
                 .link {
-                    stroke: #ddd;
-                    stroke-opacity: 0.8;
-                    stroke-width: 1px;
+                    stroke: #e5e7eb;
+                    stroke-opacity: 1;
+                    stroke-width: 1.5px;
                 }
             </style>
         </head>
@@ -358,10 +358,10 @@ struct D3WebView: UIViewRepresentable {
                 const width = window.innerWidth;
                 const height = window.innerHeight;
 
-                // Minimal pastel color palette
+                // Notion-style light gray color palette
                 const color = d3.scaleOrdinal([
-                    "#a8dadc", "#457b9d", "#1d3557", "#f1faee", "#e63946",
-                    "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51", "#264653"
+                    "#e5e7eb", "#d1d5db", "#c7ccd1", "#b8bdc3", "#e8eaed",
+                    "#dfe2e6", "#d4d7db", "#caced3", "#e3e5e8", "#dadde1"
                 ]);
 
                 const svg = d3.select("#graph")

@@ -133,10 +133,12 @@ struct D3WebView: NSViewRepresentable {
                     }));
 
                 const simulation = d3.forceSimulation(data.nodes)
-                    .force("link", d3.forceLink(data.links).id(d => d.id).distance(100))
-                    .force("charge", d3.forceManyBody().strength(-300))
+                    .force("link", d3.forceLink(data.links).id(d => d.id).distance(80))
+                    .force("charge", d3.forceManyBody().strength(-100))
                     .force("center", d3.forceCenter(width / 2, height / 2))
-                    .force("collision", d3.forceCollide().radius(30));
+                    .force("x", d3.forceX(width / 2).strength(0.1))
+                    .force("y", d3.forceY(height / 2).strength(0.1))
+                    .force("collision", d3.forceCollide().radius(35));
 
                 const link = g.append("g")
                     .selectAll("line")
@@ -185,6 +187,8 @@ struct D3WebView: NSViewRepresentable {
                     console.log("Clicked node:", d.name);
                 });
 
+                let hasZoomed = false;
+
                 simulation.on("tick", () => {
                     link
                         .attr("x1", d => d.source.x)
@@ -194,6 +198,64 @@ struct D3WebView: NSViewRepresentable {
 
                     node.attr("transform", d => `translate(${d.x},${d.y})`);
                 });
+
+                // Auto-zoom to fit all nodes after simulation stabilizes
+                simulation.on("end", () => {
+                    if (!hasZoomed && data.nodes.length > 0) {
+                        hasZoomed = true;
+                        zoomToFit();
+                    }
+                });
+
+                // Also zoom after initial layout (around 1 second)
+                setTimeout(() => {
+                    if (!hasZoomed && data.nodes.length > 0) {
+                        hasZoomed = true;
+                        zoomToFit();
+                    }
+                }, 1000);
+
+                function zoomToFit() {
+                    // Calculate bounds of all nodes
+                    const nodes = data.nodes;
+                    if (nodes.length === 0) return;
+
+                    let minX = Infinity, maxX = -Infinity;
+                    let minY = Infinity, maxY = -Infinity;
+
+                    nodes.forEach(d => {
+                        if (d.x < minX) minX = d.x;
+                        if (d.x > maxX) maxX = d.x;
+                        if (d.y < minY) minY = d.y;
+                        if (d.y > maxY) maxY = d.y;
+                    });
+
+                    // Add padding
+                    const padding = 100;
+                    const boundsWidth = maxX - minX + padding * 2;
+                    const boundsHeight = maxY - minY + padding * 2;
+                    const centerX = (minX + maxX) / 2;
+                    const centerY = (minY + maxY) / 2;
+
+                    // Calculate scale to fit
+                    const scale = Math.min(
+                        width / boundsWidth,
+                        height / boundsHeight,
+                        2.0  // Max zoom level
+                    );
+
+                    // Calculate translation
+                    const translateX = width / 2 - scale * centerX;
+                    const translateY = height / 2 - scale * centerY;
+
+                    // Apply zoom transform with animation
+                    svg.transition()
+                        .duration(750)
+                        .call(
+                            d3.zoom().transform,
+                            d3.zoomIdentity.translate(translateX, translateY).scale(scale)
+                        );
+                }
 
                 function drag(simulation) {
                     function dragstarted(event) {
@@ -356,10 +418,12 @@ struct D3WebView: UIViewRepresentable {
                     }));
 
                 const simulation = d3.forceSimulation(data.nodes)
-                    .force("link", d3.forceLink(data.links).id(d => d.id).distance(100))
-                    .force("charge", d3.forceManyBody().strength(-300))
+                    .force("link", d3.forceLink(data.links).id(d => d.id).distance(80))
+                    .force("charge", d3.forceManyBody().strength(-100))
                     .force("center", d3.forceCenter(width / 2, height / 2))
-                    .force("collision", d3.forceCollide().radius(30));
+                    .force("x", d3.forceX(width / 2).strength(0.1))
+                    .force("y", d3.forceY(height / 2).strength(0.1))
+                    .force("collision", d3.forceCollide().radius(35));
 
                 const link = g.append("g")
                     .selectAll("line")
@@ -407,6 +471,8 @@ struct D3WebView: UIViewRepresentable {
                     }, 3000);
                 });
 
+                let hasZoomed = false;
+
                 simulation.on("tick", () => {
                     link
                         .attr("x1", d => d.source.x)
@@ -416,6 +482,64 @@ struct D3WebView: UIViewRepresentable {
 
                     node.attr("transform", d => `translate(${d.x},${d.y})`);
                 });
+
+                // Auto-zoom to fit all nodes after simulation stabilizes
+                simulation.on("end", () => {
+                    if (!hasZoomed && data.nodes.length > 0) {
+                        hasZoomed = true;
+                        zoomToFit();
+                    }
+                });
+
+                // Also zoom after initial layout (around 1 second)
+                setTimeout(() => {
+                    if (!hasZoomed && data.nodes.length > 0) {
+                        hasZoomed = true;
+                        zoomToFit();
+                    }
+                }, 1000);
+
+                function zoomToFit() {
+                    // Calculate bounds of all nodes
+                    const nodes = data.nodes;
+                    if (nodes.length === 0) return;
+
+                    let minX = Infinity, maxX = -Infinity;
+                    let minY = Infinity, maxY = -Infinity;
+
+                    nodes.forEach(d => {
+                        if (d.x < minX) minX = d.x;
+                        if (d.x > maxX) maxX = d.x;
+                        if (d.y < minY) minY = d.y;
+                        if (d.y > maxY) maxY = d.y;
+                    });
+
+                    // Add padding
+                    const padding = 100;
+                    const boundsWidth = maxX - minX + padding * 2;
+                    const boundsHeight = maxY - minY + padding * 2;
+                    const centerX = (minX + maxX) / 2;
+                    const centerY = (minY + maxY) / 2;
+
+                    // Calculate scale to fit
+                    const scale = Math.min(
+                        width / boundsWidth,
+                        height / boundsHeight,
+                        2.0  // Max zoom level
+                    );
+
+                    // Calculate translation
+                    const translateX = width / 2 - scale * centerX;
+                    const translateY = height / 2 - scale * centerY;
+
+                    // Apply zoom transform with animation
+                    svg.transition()
+                        .duration(750)
+                        .call(
+                            d3.zoom().transform,
+                            d3.zoomIdentity.translate(translateX, translateY).scale(scale)
+                        );
+                }
 
                 function drag(simulation) {
                     function dragstarted(event) {

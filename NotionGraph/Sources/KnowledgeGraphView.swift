@@ -66,7 +66,7 @@ struct D3WebView: NSViewRepresentable {
                     margin: 0;
                     padding: 0;
                     overflow: hidden;
-                    background: #1a1a1a;
+                    background: #ffffff;
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 }
                 #graph {
@@ -77,36 +77,26 @@ struct D3WebView: NSViewRepresentable {
                     cursor: pointer;
                 }
                 .node circle {
-                    stroke: #fff;
-                    stroke-width: 2px;
+                    stroke: #333;
+                    stroke-width: 1px;
                 }
                 .node text {
-                    font-size: 12px;
-                    fill: #ffffff;
+                    font-size: 11px;
+                    font-weight: 400;
+                    fill: #333;
                     pointer-events: none;
                     text-anchor: middle;
                     dominant-baseline: middle;
                 }
                 .link {
-                    stroke: #999;
-                    stroke-opacity: 0.6;
-                    stroke-width: 2px;
-                }
-                .tooltip {
-                    position: absolute;
-                    padding: 8px;
-                    background: rgba(0, 0, 0, 0.8);
-                    color: white;
-                    border-radius: 4px;
-                    pointer-events: none;
-                    font-size: 12px;
-                    display: none;
+                    stroke: #ddd;
+                    stroke-opacity: 0.8;
+                    stroke-width: 1px;
                 }
             </style>
         </head>
         <body>
             <div id="graph"></div>
-            <div class="tooltip" id="tooltip"></div>
             <script src="https://d3js.org/d3.v7.min.js"></script>
             <script>
                 const data = \(jsonString);
@@ -114,7 +104,11 @@ struct D3WebView: NSViewRepresentable {
                 const width = window.innerWidth;
                 const height = window.innerHeight;
 
-                const color = d3.scaleOrdinal(d3.schemeCategory10);
+                // Minimal pastel color palette
+                const color = d3.scaleOrdinal([
+                    "#a8dadc", "#457b9d", "#1d3557", "#f1faee", "#e63946",
+                    "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51", "#264653"
+                ]);
 
                 const svg = d3.select("#graph")
                     .append("svg")
@@ -154,38 +148,14 @@ struct D3WebView: NSViewRepresentable {
                     .call(drag(simulation));
 
                 node.append("circle")
-                    .attr("r", 8)
+                    .attr("r", 6)
                     .attr("fill", d => color(d.group));
 
                 node.append("text")
-                    .attr("dy", 20)
+                    .attr("dy", 18)
                     .text(d => d.name)
-                    .style("font-size", "10px")
-                    .style("fill", "#ffffff");
-
-                const tooltip = d3.select("#tooltip");
-
-                node.on("mouseover", function(event, d) {
-                    tooltip.style("display", "block")
-                        .html(`<strong>${d.name}</strong><br/>ID: ${d.id}`)
-                        .style("left", (event.pageX + 10) + "px")
-                        .style("top", (event.pageY - 10) + "px");
-
-                    d3.select(this).select("circle")
-                        .transition()
-                        .duration(200)
-                        .attr("r", 12);
-                })
-                .on("mouseout", function() {
-                    tooltip.style("display", "none");
-                    d3.select(this).select("circle")
-                        .transition()
-                        .duration(200)
-                        .attr("r", 8);
-                })
-                .on("click", function(event, d) {
-                    console.log("Clicked node:", d.name);
-                });
+                    .style("font-size", "11px")
+                    .style("fill", "#333");
 
                 let hasZoomed = false;
 
@@ -281,13 +251,12 @@ struct D3WebView: NSViewRepresentable {
                         .on("end", dragended);
                 }
 
-                // Handle window resize
+                // Handle window resize - just update viewport, don't rescale nodes
                 window.addEventListener('resize', () => {
                     const newWidth = window.innerWidth;
                     const newHeight = window.innerHeight;
-                    svg.attr("width", newWidth).attr("height", newHeight);
-                    simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2));
-                    simulation.alpha(0.3).restart();
+                    svg.attr("width", newWidth).attr("height", newHeight)
+                       .attr("viewBox", [0, 0, newWidth, newHeight]);
                 });
             </script>
         </body>
@@ -351,7 +320,7 @@ struct D3WebView: UIViewRepresentable {
                     margin: 0;
                     padding: 0;
                     overflow: hidden;
-                    background: #1a1a1a;
+                    background: #ffffff;
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 }
                 #graph {
@@ -362,36 +331,26 @@ struct D3WebView: UIViewRepresentable {
                     cursor: pointer;
                 }
                 .node circle {
-                    stroke: #fff;
-                    stroke-width: 2px;
+                    stroke: #333;
+                    stroke-width: 1px;
                 }
                 .node text {
-                    font-size: 12px;
-                    fill: #ffffff;
+                    font-size: 11px;
+                    font-weight: 400;
+                    fill: #333;
                     pointer-events: none;
                     text-anchor: middle;
                     dominant-baseline: middle;
                 }
                 .link {
-                    stroke: #999;
-                    stroke-opacity: 0.6;
-                    stroke-width: 2px;
-                }
-                .tooltip {
-                    position: absolute;
-                    padding: 8px;
-                    background: rgba(0, 0, 0, 0.8);
-                    color: white;
-                    border-radius: 4px;
-                    pointer-events: none;
-                    font-size: 12px;
-                    display: none;
+                    stroke: #ddd;
+                    stroke-opacity: 0.8;
+                    stroke-width: 1px;
                 }
             </style>
         </head>
         <body>
             <div id="graph"></div>
-            <div class="tooltip" id="tooltip"></div>
             <script src="https://d3js.org/d3.v7.min.js"></script>
             <script>
                 const data = \(jsonString);
@@ -399,7 +358,11 @@ struct D3WebView: UIViewRepresentable {
                 const width = window.innerWidth;
                 const height = window.innerHeight;
 
-                const color = d3.scaleOrdinal(d3.schemeCategory10);
+                // Minimal pastel color palette
+                const color = d3.scaleOrdinal([
+                    "#a8dadc", "#457b9d", "#1d3557", "#f1faee", "#e63946",
+                    "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51", "#264653"
+                ]);
 
                 const svg = d3.select("#graph")
                     .append("svg")
@@ -565,13 +528,12 @@ struct D3WebView: UIViewRepresentable {
                         .on("end", dragended);
                 }
 
-                // Handle window resize
+                // Handle window resize - just update viewport, don't rescale nodes
                 window.addEventListener('resize', () => {
                     const newWidth = window.innerWidth;
                     const newHeight = window.innerHeight;
-                    svg.attr("width", newWidth).attr("height", newHeight);
-                    simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2));
-                    simulation.alpha(0.3).restart();
+                    svg.attr("width", newWidth).attr("height", newHeight)
+                       .attr("viewBox", [0, 0, newWidth, newHeight]);
                 });
             </script>
         </body>

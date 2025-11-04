@@ -60,12 +60,23 @@ struct NotionPage: Codable {
         }
         return relationIds
     }
+
+    var tags: [String] {
+        var tagNames: [String] = []
+        for (_, property) in properties {
+            if case .multiSelect(let tags) = property {
+                tagNames.append(contentsOf: tags.map { $0.name })
+            }
+        }
+        return tagNames
+    }
 }
 
 enum NotionProperty: Codable {
     case title([NotionText])
     case richText([NotionText])
     case relation([NotionRelation])
+    case multiSelect([NotionTag])
     case other
 
     init(from decoder: Decoder) throws {
@@ -82,6 +93,9 @@ enum NotionProperty: Codable {
         case "relation":
             let relations = try container.decode([NotionRelation].self, forKey: .relation)
             self = .relation(relations)
+        case "multi_select":
+            let tags = try container.decode([NotionTag].self, forKey: .multiSelect)
+            self = .multiSelect(tags)
         default:
             self = .other
         }
@@ -99,6 +113,9 @@ enum NotionProperty: Codable {
         case .relation(let relations):
             try container.encode("relation", forKey: .type)
             try container.encode(relations, forKey: .relation)
+        case .multiSelect(let tags):
+            try container.encode("multi_select", forKey: .type)
+            try container.encode(tags, forKey: .multiSelect)
         case .other:
             try container.encode("other", forKey: .type)
         }
@@ -109,6 +126,7 @@ enum NotionProperty: Codable {
         case title
         case richText = "rich_text"
         case relation
+        case multiSelect = "multi_select"
     }
 }
 
@@ -122,4 +140,9 @@ struct NotionText: Codable {
 
 struct NotionRelation: Codable {
     let id: String
+}
+
+struct NotionTag: Codable {
+    let id: String?
+    let name: String
 }

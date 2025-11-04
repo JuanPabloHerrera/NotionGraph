@@ -15,7 +15,11 @@ class NotionService: ObservableObject {
     private let notionVersion = "2022-06-28"
 
     func fetchDatabase() async {
-        guard !apiKey.isEmpty, !databaseId.isEmpty else {
+        // Trim whitespace from credentials
+        let trimmedApiKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedDatabaseId = databaseId.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedApiKey.isEmpty, !trimmedDatabaseId.isEmpty else {
             error = "Please configure your Notion API key and database ID"
             return
         }
@@ -25,7 +29,7 @@ class NotionService: ObservableObject {
 
         do {
             // Normalize the database ID by removing dashes and ensuring proper format
-            let normalizedId = normalizeDatabaseId(databaseId)
+            let normalizedId = normalizeDatabaseId(trimmedDatabaseId)
 
             guard let url = URL(string: "\(baseURL)/databases/\(normalizedId)/query") else {
                 throw NotionError.apiError(statusCode: 400, message: "Invalid database ID format")
@@ -33,7 +37,7 @@ class NotionService: ObservableObject {
 
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
-            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            request.addValue("Bearer \(trimmedApiKey)", forHTTPHeaderField: "Authorization")
             request.addValue(notionVersion, forHTTPHeaderField: "Notion-Version")
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
 
@@ -55,6 +59,8 @@ class NotionService: ObservableObject {
 
             let database = try JSONDecoder().decode(NotionDatabase.self, from: data)
 
+            print("✅ Fetched \(database.results.count) pages from database")
+
             // Fetch content blocks for each page to find page mentions
             await fetchPageContent(for: database.results)
 
@@ -67,6 +73,9 @@ class NotionService: ObservableObject {
 
     private func fetchPageContent(for pages: [NotionPage]) async {
         var allMentions: [(sourceId: String, targetId: String)] = []
+        let trimmedApiKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        print("📝 Fetching page content for \(pages.count) pages to find mentions...")
 
         // Fetch blocks for each page to find page mentions
         for page in pages {
@@ -74,28 +83,38 @@ class NotionService: ObservableObject {
                 let url = URL(string: "\(baseURL)/blocks/\(page.id)/children")!
                 var request = URLRequest(url: url)
                 request.httpMethod = "GET"
-                request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+                request.addValue("Bearer \(trimmedApiKey)", forHTTPHeaderField: "Authorization")
                 request.addValue(notionVersion, forHTTPHeaderField: "Notion-Version")
 
                 let (data, response) = try await URLSession.shared.data(for: request)
 
                 guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                    print("⚠️ Failed to fetch blocks for page '\(page.title)' - status: \((response as? HTTPURLResponse)?.statusCode ?? 0)")
                     continue
                 }
 
                 if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let results = json["results"] as? [[String: Any]] {
+                    print("📄 Page '\(page.title)' has \(results.count) blocks")
                     for block in results {
                         // Extract page mentions from block content
                         let mentions = extractPageMentions(from: block)
+                        if !mentions.isEmpty {
+                            print("🔗 Found \(mentions.count) page mention(s) in '\(page.title)'")
+                        }
                         for mentionId in mentions {
                             allMentions.append((sourceId: page.id, targetId: mentionId))
                         }
                     }
                 }
             } catch {
-                print("Error fetching blocks for page \(page.title): \(error)")
+                print("❌ Error fetching blocks for page \(page.title): \(error)")
             }
+        }
+
+        print("✅ Total page mentions found: \(allMentions.count)")
+        for mention in allMentions {
+            print("   🔗 \(mention.sourceId) → \(mention.targetId)")
         }
 
         processPages(pages, mentions: allMentions)
@@ -103,6 +122,7 @@ class NotionService: ObservableObject {
 
     private func extractPageMentions(from block: [String: Any]) -> [String] {
         var mentions: [String] = []
+        let blockType = block["type"] as? String ?? "unknown"
 
         // Function to recursively search for mentions in rich text
         func searchRichText(_ richTextArray: [[String: Any]]) {
@@ -113,6 +133,7 @@ class NotionService: ObservableObject {
                    let page = mention["page"] as? [String: Any],
                    let id = page["id"] as? String {
                     mentions.append(id)
+                    print("   🔗 Found page mention in \(blockType) block: \(id)")
                 }
             }
         }
@@ -194,6 +215,15 @@ class NotionService: ObservableObject {
         var graphNodes: [GraphNode] = []
         var graphLinks: [GraphLink] = []
 
+        print("\n📊 Processing \(pages.count) pages and \(mentions.count) mentions...")
+
+        // Collect all unique tags
+        var uniqueTags = Set<String>()
+        for page in pages {
+            uniqueTags.formUnion(page.tags)
+        }
+        print("📑 Found \(uniqueTags.count) unique tags")
+
         // Create nodes from pages
         for (index, page) in pages.enumerated() {
             let node = GraphNode(
@@ -204,8 +234,38 @@ class NotionService: ObservableObject {
             )
             graphNodes.append(node)
         }
+        print("✅ Created \(graphNodes.count) page nodes")
+
+        // Create nodes from tags
+        for tag in uniqueTags {
+            let tagNode = GraphNode(
+                id: "tag-\(tag)",
+                name: tag,
+                type: "tag",
+                group: 0 // Special group for tags
+            )
+            graphNodes.append(tagNode)
+        }
+        print("✅ Created \(uniqueTags.count) tag nodes")
+
+        // Create links from pages to tags
+        var tagLinksCount = 0
+        for page in pages {
+            for tag in page.tags {
+                let tagNodeId = "tag-\(tag)"
+                let link = GraphLink(
+                    source: page.id,
+                    target: tagNodeId,
+                    value: 1
+                )
+                graphLinks.append(link)
+                tagLinksCount += 1
+            }
+        }
+        print("✅ Created \(tagLinksCount) links from pages to tags")
 
         // Create links from relation properties
+        var relationLinksCount = 0
         for page in pages {
             let sourceId = page.id
             let relatedIds = page.relations
@@ -218,11 +278,14 @@ class NotionService: ObservableObject {
                         value: 1
                     )
                     graphLinks.append(link)
+                    relationLinksCount += 1
                 }
             }
         }
+        print("✅ Created \(relationLinksCount) links from relation properties")
 
         // Create links from page mentions in content
+        var mentionLinksCount = 0
         for mention in mentions {
             // Only create link if both source and target exist in our nodes
             if graphNodes.contains(where: { $0.id == mention.sourceId }) &&
@@ -233,8 +296,13 @@ class NotionService: ObservableObject {
                     value: 1
                 )
                 graphLinks.append(link)
+                mentionLinksCount += 1
+            } else {
+                print("⚠️ Skipping mention link (source or target not in database): \(mention.sourceId) → \(mention.targetId)")
             }
         }
+        print("✅ Created \(mentionLinksCount) links from page mentions")
+        print("📈 Total links in graph: \(graphLinks.count)\n")
 
         self.nodes = graphNodes
         self.links = graphLinks

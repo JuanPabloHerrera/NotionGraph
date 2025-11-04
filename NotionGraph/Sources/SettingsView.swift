@@ -13,11 +13,17 @@ struct SettingsView: View {
                     #if os(macOS)
                         .textFieldStyle(.roundedBorder)
                     #endif
+                        .onChange(of: notionService.apiKey) { oldValue, newValue in
+                            notionService.apiKey = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                        }
 
                     TextField("Database ID", text: $notionService.databaseId)
                     #if os(macOS)
                         .textFieldStyle(.roundedBorder)
                     #endif
+                        .onChange(of: notionService.databaseId) { oldValue, newValue in
+                            notionService.databaseId = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                        }
                 } header: {
                     Text("Notion Configuration")
                 } footer: {

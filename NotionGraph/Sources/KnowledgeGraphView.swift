@@ -236,13 +236,43 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
                             currentNode = d;
 
                             // Get click position on the page
-                            const x = event.pageX || event.clientX;
-                            const y = event.pageY || event.clientY;
+                            let x = event.pageX || event.clientX;
+                            let y = event.pageY || event.clientY;
+
+                            // Show menu temporarily to measure it
+                            contextMenu.style.display = 'block';
+                            contextMenu.style.visibility = 'hidden';
+
+                            // Get menu dimensions
+                            const menuWidth = contextMenu.offsetWidth;
+                            const menuHeight = contextMenu.offsetHeight;
+
+                            // Get viewport dimensions
+                            const viewportWidth = window.innerWidth;
+                            const viewportHeight = window.innerHeight;
+
+                            // Adjust horizontal position if menu would overflow right edge
+                            if (x + menuWidth > viewportWidth) {
+                                x = viewportWidth - menuWidth - 10; // 10px padding from edge
+                            }
+                            // Ensure menu doesn't go off left edge
+                            if (x < 10) {
+                                x = 10;
+                            }
+
+                            // Adjust vertical position if menu would overflow bottom edge
+                            if (y + menuHeight > viewportHeight) {
+                                y = viewportHeight - menuHeight - 10; // 10px padding from edge
+                            }
+                            // Ensure menu doesn't go off top edge
+                            if (y < 10) {
+                                y = 10;
+                            }
 
                             // Position and show menu
                             contextMenu.style.left = x + 'px';
                             contextMenu.style.top = y + 'px';
-                            contextMenu.style.display = 'block';
+                            contextMenu.style.visibility = 'visible';
                         }
                     })
                     .style("cursor", d => d.type === "page" ? "pointer" : "default");
@@ -375,6 +405,7 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
                         }
                     }
                     contextMenu.style.display = 'none';
+                    contextMenu.style.visibility = 'visible';
                 });
 
                 localGraphBtn.addEventListener('click', (event) => {
@@ -382,12 +413,14 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
                     // TODO: Implement local graph view
                     // For now, just hide the menu
                     contextMenu.style.display = 'none';
+                    contextMenu.style.visibility = 'visible';
                 });
 
                 // Hide menu when clicking elsewhere
                 document.addEventListener('click', (event) => {
                     if (contextMenu.style.display === 'block' && !contextMenu.contains(event.target)) {
                         contextMenu.style.display = 'none';
+                        contextMenu.style.visibility = 'visible';
                     }
                 });
 
@@ -395,6 +428,7 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
                 document.addEventListener('keydown', (event) => {
                     if (event.key === 'Escape' && contextMenu.style.display === 'block') {
                         contextMenu.style.display = 'none';
+                        contextMenu.style.visibility = 'visible';
                     }
                 });
             </script>

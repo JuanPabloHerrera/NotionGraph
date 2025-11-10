@@ -279,8 +279,8 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
 
                 node.append("circle")
                     .attr("r", 5)
-                    .attr("fill", "#9ca3af")  // Gray for minimalist look
-                    .attr("stroke", "#6b7280")
+                    .attr("fill", d => d.type === "tag" ? "#d1d5db" : "#9ca3af")  // Light gray for tags
+                    .attr("stroke", d => d.type === "tag" ? "#9ca3af" : "#6b7280")
                     .attr("stroke-width", 1);
 
                 nodeText = node.append("text")

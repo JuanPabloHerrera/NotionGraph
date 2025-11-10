@@ -12,43 +12,139 @@ struct ContentView: View {
                 .ignoresSafeArea(.all)
 
             if notionService.isLoading {
-                ProgressView("Loading Notion database...")
-            } else if let error = notionService.error {
-                VStack(spacing: 16) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: 48))
-                        .foregroundColor(.orange)
-                    Text("Error")
-                        .font(.headline)
-                    Text(error)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                    Button("Retry") {
-                        Task {
-                            await notionService.fetchDatabase()
+                VStack {
+                    Spacer()
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.2)
+                        Text("Loading your graph...")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
+            } else if notionService.apiKey.isEmpty || notionService.databaseId.isEmpty {
+                // Show welcome page if credentials are not configured
+                VStack {
+                    Spacer()
+
+                    VStack(spacing: 24) {
+                        VStack(spacing: 12) {
+                            Image(systemName: "circle.dotted")
+                                .font(.system(size: 64, weight: .thin))
+                                .foregroundColor(.gray)
+
+                            VStack(spacing: 6) {
+                                Text("Welcome to NotionGraph")
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                Text("Add your Notion API and Database ID")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 24)
+                            }
                         }
+
+                        Button {
+                            showingSettings = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "gearshape")
+                                Text("Configure Settings")
+                            }
+                            .fontWeight(.medium)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+
+                    Spacer()
                 }
-                .padding()
+                .frame(maxWidth: .infinity)
+            } else if let error = notionService.error {
+                // Show error page only for actual connection errors
+                VStack {
+                    Spacer()
+                    VStack(spacing: 20) {
+                        Image(systemName: "exclamationmark.circle")
+                            .font(.system(size: 56, weight: .light))
+                            .foregroundColor(.orange)
+
+                        VStack(spacing: 8) {
+                            Text("Connection Error")
+                                .font(.title3)
+                                .fontWeight(.semibold)
+                            Text(error)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
+                        }
+
+                        Button {
+                            Task {
+                                await notionService.fetchDatabase()
+                            }
+                        } label: {
+                            Text("Try Again")
+                                .fontWeight(.medium)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 10)
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
             } else if notionService.nodes.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "doc.text.magnifyingglass")
-                        .font(.system(size: 48))
-                        .foregroundColor(.gray)
-                    Text("No data")
-                        .font(.headline)
-                    Text("Configure your Notion API key and database ID in settings")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                    Button("Settings") {
-                        showingSettings = true
+                VStack {
+                    Spacer()
+
+                    VStack(spacing: 24) {
+                        VStack(spacing: 12) {
+                            Image(systemName: "circle.dotted")
+                                .font(.system(size: 64, weight: .thin))
+                                .foregroundColor(.gray)
+
+                            VStack(spacing: 6) {
+                                Text("Welcome to NotionGraph")
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                Text("Add your Notion API and Database ID")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 24)
+                            }
+                        }
+
+                        Button {
+                            showingSettings = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "gearshape")
+                                Text("Configure Settings")
+                            }
+                            .fontWeight(.medium)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+
+                    Spacer()
                 }
-                .padding()
+                .frame(maxWidth: .infinity)
             } else {
                 KnowledgeGraphView(nodes: notionService.nodes, links: notionService.links)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -102,43 +198,133 @@ struct ContentView: View {
         NavigationStack {
             VStack {
                 if notionService.isLoading {
-                    ProgressView("Loading Notion database...")
-                } else if let error = notionService.error {
-                    VStack(spacing: 16) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 48))
-                            .foregroundColor(.orange)
-                        Text("Error")
-                            .font(.headline)
-                        Text(error)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                        Button("Retry") {
-                            Task {
-                                await notionService.fetchDatabase()
+                    VStack {
+                        Spacer()
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.2)
+                            Text("Loading your graph...")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                    }
+                } else if notionService.apiKey.isEmpty || notionService.databaseId.isEmpty {
+                    // Show welcome page if credentials are not configured
+                    VStack {
+                        Spacer()
+
+                        VStack(spacing: 24) {
+                            VStack(spacing: 12) {
+                                Image(systemName: "circle.dotted")
+                                    .font(.system(size: 64, weight: .thin))
+                                    .foregroundColor(.gray)
+
+                                VStack(spacing: 6) {
+                                    Text("Welcome to NotionGraph")
+                                        .font(.title2)
+                                        .fontWeight(.semibold)
+                                    Text("Add your Notion API and Database ID")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                        .multilineTextAlignment(.center)
+                                        .padding(.horizontal, 24)
+                                }
                             }
+
+                            Button {
+                                showingSettings = true
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "gearshape")
+                                    Text("Configure Settings")
+                                }
+                                .fontWeight(.medium)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 10)
+                            }
+                            .buttonStyle(.borderedProminent)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+
+                        Spacer()
                     }
-                    .padding()
+                    .frame(maxWidth: .infinity)
+                } else if let error = notionService.error {
+                    // Show error page only for actual connection errors
+                    VStack {
+                        Spacer()
+                        VStack(spacing: 20) {
+                            Image(systemName: "exclamationmark.circle")
+                                .font(.system(size: 56, weight: .light))
+                                .foregroundColor(.orange)
+
+                            VStack(spacing: 8) {
+                                Text("Connection Error")
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                Text(error)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 32)
+                            }
+
+                            Button {
+                                Task {
+                                    await notionService.fetchDatabase()
+                                }
+                            } label: {
+                                Text("Try Again")
+                                    .fontWeight(.medium)
+                                    .padding(.horizontal, 24)
+                                    .padding(.vertical, 10)
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                        .padding()
+                        Spacer()
+                    }
                 } else if notionService.nodes.isEmpty {
-                    VStack(spacing: 16) {
-                        Image(systemName: "doc.text.magnifyingglass")
-                            .font(.system(size: 48))
-                            .foregroundColor(.gray)
-                        Text("No data")
-                            .font(.headline)
-                        Text("Configure your Notion API key and database ID in settings")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                        Button("Settings") {
-                            showingSettings = true
+                    VStack {
+                        Spacer()
+
+                        VStack(spacing: 24) {
+                            VStack(spacing: 12) {
+                                Image(systemName: "circle.dotted")
+                                    .font(.system(size: 64, weight: .thin))
+                                    .foregroundColor(.gray)
+
+                                VStack(spacing: 6) {
+                                    Text("Welcome to NotionGraph")
+                                        .font(.title2)
+                                        .fontWeight(.semibold)
+                                    Text("Add your Notion API and Database ID")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                        .multilineTextAlignment(.center)
+                                        .padding(.horizontal, 24)
+                                }
+                            }
+
+                            Button {
+                                showingSettings = true
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "gearshape")
+                                    Text("Configure Settings")
+                                }
+                                .fontWeight(.medium)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 10)
+                            }
+                            .buttonStyle(.borderedProminent)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .padding()
+
+                        Spacer()
                     }
-                    .padding()
                 } else {
                     KnowledgeGraphView(nodes: notionService.nodes, links: notionService.links)
                 }

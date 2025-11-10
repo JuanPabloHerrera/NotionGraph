@@ -7,29 +7,44 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0C0EEEB9A79B0256F5FABF85 /* CachedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9EFB9D57366A345FF642F8 /* CachedModels.swift */; };
 		110AC364E3662B1F27DEDC66 /* NotionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD35452D16D26C9D60B583A8 /* NotionService.swift */; };
 		111BF26E415AB6E329B43121 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999C2E1065108DB2F55494C9 /* Models.swift */; };
 		1C6869B72F2325E8A6FE9DCF /* NotionGraphApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A2D6DF217CFA12B8F20713 /* NotionGraphApp.swift */; };
+		47CEE597AA232E9EA7EDAD0B /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD4FA22702FF1B910B9A02A6 /* StatusBadge.swift */; };
+		4952F3E6641DE007FB8AE18D /* CacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7FBAFFD5537BB94547F03F /* CacheService.swift */; };
+		49F0EDE248DC30DABC49720F /* CacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC7FBAFFD5537BB94547F03F /* CacheService.swift */; };
 		520DADFC81DBAB1C5D8C596B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C78DEBC88FD7E4ADDB86C07 /* ContentView.swift */; };
+		58086F8313945AA623F81729 /* CachedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9EFB9D57366A345FF642F8 /* CachedModels.swift */; };
 		5C5873EE0058506B59DEB9AB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C78DEBC88FD7E4ADDB86C07 /* ContentView.swift */; };
 		94A6F3DA8C41A1F48C9BD01A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13255181805FE1303589A85D /* SettingsView.swift */; };
+		9B76EE96333F48FC6B168926 /* d3.v7.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 740301EEA3ECF38A7728C332 /* d3.v7.min.js */; };
 		9ED4D56C28EC6D7DE6DF331F /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 999C2E1065108DB2F55494C9 /* Models.swift */; };
 		A2B22614DADA8E318634427A /* KnowledgeGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962B801911B47D9A1B19CCE7 /* KnowledgeGraphView.swift */; };
 		A75CBD3293DDEDC270BD01FE /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13255181805FE1303589A85D /* SettingsView.swift */; };
 		A9CC61F28EC85C2CAC6AA58C /* KnowledgeGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962B801911B47D9A1B19CCE7 /* KnowledgeGraphView.swift */; };
+		AECFA307088DC223876A6E8F /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD4FA22702FF1B910B9A02A6 /* StatusBadge.swift */; };
+		D3931E8AF2B7CB302B1F9649 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9533691AF0E0783E394FAC97 /* NetworkMonitor.swift */; };
+		D64240E5C3664D41C8FAF661 /* d3.v7.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 740301EEA3ECF38A7728C332 /* d3.v7.min.js */; };
 		DA83F28AC557DFD165A5908C /* NotionGraphApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A2D6DF217CFA12B8F20713 /* NotionGraphApp.swift */; };
 		E15C0DE3AD3A9FF10E993B06 /* NotionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD35452D16D26C9D60B583A8 /* NotionService.swift */; };
+		E6DF77AF29B6A2F461D03C27 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9533691AF0E0783E394FAC97 /* NetworkMonitor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		13255181805FE1303589A85D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		3C78DEBC88FD7E4ADDB86C07 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		6A92B6897A70B5AD3F7B4A87 /* NotionGraph.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NotionGraph.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		740301EEA3ECF38A7728C332 /* d3.v7.min.js */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.javascript; name = d3.v7.min.js; path = NotionGraph/Resources/d3.v7.min.js; sourceTree = "<group>"; };
+		9533691AF0E0783E394FAC97 /* NetworkMonitor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = NetworkMonitor.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		962B801911B47D9A1B19CCE7 /* KnowledgeGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeGraphView.swift; sourceTree = "<group>"; };
 		999C2E1065108DB2F55494C9 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		B2A2D6DF217CFA12B8F20713 /* NotionGraphApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionGraphApp.swift; sourceTree = "<group>"; };
 		BD35452D16D26C9D60B583A8 /* NotionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionService.swift; sourceTree = "<group>"; };
+		BD4FA22702FF1B910B9A02A6 /* StatusBadge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = StatusBadge.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
 		EF464F83CFECB1DC1551F041 /* NotionGraph-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = "NotionGraph-macOS.app"; path = NotionGraph.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FC7FBAFFD5537BB94547F03F /* CacheService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CacheService.swift; path = CacheService.swift; sourceTree = "<group>"; };
+		FF9EFB9D57366A345FF642F8 /* CachedModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CachedModels.swift; path = CachedModels.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -47,7 +62,16 @@
 			children = (
 				CD2F6A2F1428FA2BF7ADE5B3 /* Sources */,
 				028CDA010F4F6B7F2841CC13 /* Products */,
+				C05E5E8283A519A2D91C4F09 /* NotionGraph */,
 			);
+			sourceTree = "<group>";
+		};
+		C05E5E8283A519A2D91C4F09 /* NotionGraph */ = {
+			isa = PBXGroup;
+			children = (
+				DBA3920AA3F0DB96DFFAC010 /* Resources */,
+			);
+			name = NotionGraph;
 			sourceTree = "<group>";
 		};
 		CD2F6A2F1428FA2BF7ADE5B3 /* Sources */ = {
@@ -59,9 +83,21 @@
 				B2A2D6DF217CFA12B8F20713 /* NotionGraphApp.swift */,
 				BD35452D16D26C9D60B583A8 /* NotionService.swift */,
 				13255181805FE1303589A85D /* SettingsView.swift */,
+				FF9EFB9D57366A345FF642F8 /* CachedModels.swift */,
+				FC7FBAFFD5537BB94547F03F /* CacheService.swift */,
+				9533691AF0E0783E394FAC97 /* NetworkMonitor.swift */,
+				BD4FA22702FF1B910B9A02A6 /* StatusBadge.swift */,
 			);
 			name = Sources;
 			path = NotionGraph/Sources;
+			sourceTree = "<group>";
+		};
+		DBA3920AA3F0DB96DFFAC010 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				740301EEA3ECF38A7728C332 /* d3.v7.min.js */,
+			);
+			name = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -72,14 +108,13 @@
 			buildConfigurationList = FD0061ED7950A8BD03B94B48 /* Build configuration list for PBXNativeTarget "NotionGraph-macOS" */;
 			buildPhases = (
 				B9C404BB6C8180CB470D111F /* Sources */,
+				F334BBF9363FACF80DACDE9C /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = "NotionGraph-macOS";
-			packageProductDependencies = (
-			);
 			productName = "NotionGraph-macOS";
 			productReference = EF464F83CFECB1DC1551F041 /* NotionGraph-macOS.app */;
 			productType = "com.apple.product-type.application";
@@ -89,14 +124,13 @@
 			buildConfigurationList = 5939A9E414C788DFB69E70B8 /* Build configuration list for PBXNativeTarget "NotionGraph-iOS" */;
 			buildPhases = (
 				978D1EF27E9FE8C43A77529B /* Sources */,
+				5BEA6DE17277A591422BE54E /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = "NotionGraph-iOS";
-			packageProductDependencies = (
-			);
 			productName = "NotionGraph-iOS";
 			productReference = 6A92B6897A70B5AD3F7B4A87 /* NotionGraph.app */;
 			productType = "com.apple.product-type.application";
@@ -129,6 +163,7 @@
 			);
 			mainGroup = 2D39F1764C60E7C4B86A2993;
 			minimizedProjectReferenceProxies = 1;
+			productRefGroup = 028CDA010F4F6B7F2841CC13 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -137,6 +172,25 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		5BEA6DE17277A591422BE54E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D64240E5C3664D41C8FAF661 /* d3.v7.min.js in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F334BBF9363FACF80DACDE9C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9B76EE96333F48FC6B168926 /* d3.v7.min.js in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		978D1EF27E9FE8C43A77529B /* Sources */ = {
@@ -149,6 +203,10 @@
 				1C6869B72F2325E8A6FE9DCF /* NotionGraphApp.swift in Sources */,
 				110AC364E3662B1F27DEDC66 /* NotionService.swift in Sources */,
 				94A6F3DA8C41A1F48C9BD01A /* SettingsView.swift in Sources */,
+				58086F8313945AA623F81729 /* CachedModels.swift in Sources */,
+				4952F3E6641DE007FB8AE18D /* CacheService.swift in Sources */,
+				D3931E8AF2B7CB302B1F9649 /* NetworkMonitor.swift in Sources */,
+				47CEE597AA232E9EA7EDAD0B /* StatusBadge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -162,6 +220,10 @@
 				DA83F28AC557DFD165A5908C /* NotionGraphApp.swift in Sources */,
 				E15C0DE3AD3A9FF10E993B06 /* NotionService.swift in Sources */,
 				A75CBD3293DDEDC270BD01FE /* SettingsView.swift in Sources */,
+				0C0EEEB9A79B0256F5FABF85 /* CachedModels.swift in Sources */,
+				49F0EDE248DC30DABC49720F /* CacheService.swift in Sources */,
+				E6DF77AF29B6A2F461D03C27 /* NetworkMonitor.swift in Sources */,
+				AECFA307088DC223876A6E8F /* StatusBadge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

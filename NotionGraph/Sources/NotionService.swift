@@ -7,6 +7,9 @@ class NotionService: ObservableObject {
     @Published var links: [GraphLink] = []
     @Published var isLoading = false
     @Published var error: String?
+    @Published var lastSyncDate: Date?
+    @Published var isOfflineMode = false
+    @Published var isSyncingInBackground = false
 
     @AppStorage("notionApiKey") var apiKey: String = ""
     @AppStorage("notionDatabaseId") var databaseId: String = ""
@@ -14,7 +17,59 @@ class NotionService: ObservableObject {
     private let baseURL = "https://api.notion.com/v1"
     private let notionVersion = "2022-06-28"
 
-    func fetchDatabase() async {
+    // Cache service (injected from app)
+    var cacheService: CacheService?
+    var networkMonitor: NetworkMonitor?
+
+    // MARK: - Load with Cache Support
+
+    /// Loads graph data with offline support:
+    /// 1. Loads from cache immediately (if available) - INSTANT display
+    /// 2. Syncs from Notion API in background (if online) - Updates when ready
+    func loadGraphData() async {
+        // STEP 1: Load from cache IMMEDIATELY (instant display!)
+        await loadFromCache()
+
+        // STEP 2: Sync from API in TRUE BACKGROUND (non-blocking)
+        if networkMonitor?.isConnected ?? true {
+            print("🔄 Starting background sync...")
+            // Fire-and-forget background sync - doesn't block UI
+            Task {
+                isSyncingInBackground = true
+                await fetchDatabase(isBackgroundSync: true)
+                isSyncingInBackground = false
+                print("✅ Background sync completed")
+            }
+        } else {
+            print("📴 Offline - showing cached data only")
+            isOfflineMode = true
+        }
+    }
+
+    // MARK: - Load from Cache
+
+    private func loadFromCache() async {
+        guard let cacheService = cacheService else { return }
+
+        do {
+            let (cachedNodes, cachedLinks, lastSync) = try cacheService.loadGraphData()
+
+            if !cachedNodes.isEmpty {
+                self.nodes = cachedNodes
+                self.links = cachedLinks
+                self.lastSyncDate = lastSync
+                print("✅ Loaded from cache: \(cachedNodes.count) nodes, \(cachedLinks.count) links")
+            } else {
+                print("ℹ️ No cached data available")
+            }
+        } catch {
+            print("⚠️ Error loading from cache: \(error)")
+        }
+    }
+
+    // MARK: - Fetch from API
+
+    func fetchDatabase(isBackgroundSync: Bool = false) async {
         // Trim whitespace from credentials
         let trimmedApiKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedDatabaseId = databaseId.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -24,7 +79,10 @@ class NotionService: ObservableObject {
             return
         }
 
-        isLoading = true
+        // Only show full loading screen if NOT background sync
+        if !isBackgroundSync {
+            isLoading = true
+        }
         error = nil
 
         do {
@@ -64,10 +122,15 @@ class NotionService: ObservableObject {
             // Fetch content blocks for each page to find page mentions
             await fetchPageContent(for: database.results)
 
-            isLoading = false
+            // Only clear loading state if NOT background sync
+            if !isBackgroundSync {
+                isLoading = false
+            }
         } catch {
             self.error = error.localizedDescription
-            isLoading = false
+            if !isBackgroundSync {
+                isLoading = false
+            }
         }
     }
 
@@ -307,6 +370,29 @@ class NotionService: ObservableObject {
 
         self.nodes = graphNodes
         self.links = graphLinks
+
+        // Save to cache
+        Task {
+            await saveToCache(nodes: graphNodes, links: graphLinks)
+        }
+    }
+
+    // MARK: - Save to Cache
+
+    private func saveToCache(nodes: [GraphNode], links: [GraphLink]) async {
+        guard let cacheService = cacheService else {
+            print("⚠️ Cache service not available")
+            return
+        }
+
+        do {
+            try cacheService.saveGraphData(nodes: nodes, links: links, databaseId: databaseId)
+            self.lastSyncDate = Date()
+            self.isOfflineMode = false
+            print("✅ Data cached successfully")
+        } catch {
+            print("❌ Error saving to cache: \(error)")
+        }
     }
 }
 

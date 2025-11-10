@@ -20,6 +20,17 @@ struct KnowledgeGraphView: View {
     }
 }
 
+// Load bundled D3.js library
+fileprivate func loadD3Library() -> String {
+    guard let d3Path = Bundle.main.path(forResource: "d3.v7.min", ofType: "js"),
+          let d3Script = try? String(contentsOfFile: d3Path, encoding: .utf8) else {
+        print("⚠️ Failed to load bundled D3.js, falling back to CDN")
+        return "<script src=\"https://d3js.org/d3.v7.min.js\"></script>"
+    }
+    print("✅ Using bundled D3.js for offline support")
+    return "<script>\(d3Script)</script>"
+}
+
 // Shared HTML generation logic for both platforms
 fileprivate func generateHTML(nodes: [GraphNode], links: [GraphLink]) -> String {
     let graphData = GraphData(nodes: nodes, links: links)
@@ -158,7 +169,7 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
                 </button>
             </div>
             <div id="graph"></div>
-            <script src="https://d3js.org/d3.v7.min.js"></script>
+            \(loadD3Library())
             <script>
                 const data = \(jsonString);
 

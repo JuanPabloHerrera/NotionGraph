@@ -1,8 +1,13 @@
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
     @StateObject private var notionService = NotionService()
     @State private var showingSettings = false
+
+    // SwiftData and network monitoring
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var networkMonitor: NetworkMonitor
 
     var body: some View {
         #if os(iOS)
@@ -89,7 +94,7 @@ struct ContentView: View {
 
                         Button {
                             Task {
-                                await notionService.fetchDatabase()
+                                await notionService.loadGraphData()
                             }
                         } label: {
                             Text("Try Again")
@@ -153,11 +158,24 @@ struct ContentView: View {
             // Floating buttons overlay - always on top
             VStack {
                 HStack {
+                    // Status badge on the left
+                    if !notionService.nodes.isEmpty {
+                        StatusBadge(
+                            isOffline: notionService.isOfflineMode,
+                            lastSyncDate: notionService.lastSyncDate,
+                            isConnected: networkMonitor.isConnected,
+                            isSyncingInBackground: notionService.isSyncingInBackground
+                        )
+                        .padding(.top, 60)
+                        .padding(.leading, 16)
+                    }
+
                     Spacer()
+
                     HStack(spacing: 12) {
                         Button {
                             Task {
-                                await notionService.fetchDatabase()
+                                await notionService.loadGraphData()
                             }
                         } label: {
                             Image(systemName: "arrow.clockwise")
@@ -192,7 +210,12 @@ struct ContentView: View {
             SettingsView(notionService: notionService)
         }
         .task {
-            await notionService.fetchDatabase()
+            // Inject services
+            if notionService.cacheService == nil {
+                notionService.cacheService = CacheService(modelContainer: modelContext.container)
+                notionService.networkMonitor = networkMonitor
+            }
+            await notionService.loadGraphData()
         }
         #else
         NavigationStack {
@@ -273,7 +296,7 @@ struct ContentView: View {
 
                             Button {
                                 Task {
-                                    await notionService.fetchDatabase()
+                                    await notionService.loadGraphData()
                                 }
                             } label: {
                                 Text("Try Again")
@@ -333,6 +356,16 @@ struct ContentView: View {
             .navigationSubtitle("")
             .toolbarBackground(Color(hex: "#fafafa"), for: .windowToolbar)
             .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    if !notionService.nodes.isEmpty {
+                        StatusBadge(
+                            isOffline: notionService.isOfflineMode,
+                            lastSyncDate: notionService.lastSyncDate,
+                            isConnected: networkMonitor.isConnected,
+                            isSyncingInBackground: notionService.isSyncingInBackground
+                        )
+                    }
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showingSettings = true
@@ -343,7 +376,7 @@ struct ContentView: View {
                 ToolbarItem(placement: .automatic) {
                     Button {
                         Task {
-                            await notionService.fetchDatabase()
+                            await notionService.loadGraphData()
                         }
                     } label: {
                         Image(systemName: "arrow.clockwise")
@@ -356,7 +389,12 @@ struct ContentView: View {
             }
         }
         .task {
-            await notionService.fetchDatabase()
+            // Inject services
+            if notionService.cacheService == nil {
+                notionService.cacheService = CacheService(modelContainer: modelContext.container)
+                notionService.networkMonitor = networkMonitor
+            }
+            await notionService.loadGraphData()
         }
         #endif
     }

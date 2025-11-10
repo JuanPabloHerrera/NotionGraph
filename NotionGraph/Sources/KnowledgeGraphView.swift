@@ -6,12 +6,17 @@ struct KnowledgeGraphView: View {
     let links: [GraphLink]
 
     var body: some View {
+        #if os(macOS)
         D3WebView(nodes: nodes, links: links)
-            #if os(macOS)
             .ignoresSafeArea(edges: .bottom)
-            #else
-            .ignoresSafeArea()
-            #endif
+        #else
+        GeometryReader { geometry in
+            D3WebView(nodes: nodes, links: links)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .edgesIgnoringSafeArea(.all)
+        }
+        .edgesIgnoringSafeArea(.all)
+        #endif
     }
 }
 
@@ -35,18 +40,42 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
         <html>
         <head>
             <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+            <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
             <style>
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                html {
+                    width: 100vw;
+                    height: 100vh;
+                    height: -webkit-fill-available;
+                }
                 body {
                     margin: 0;
                     padding: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    height: -webkit-fill-available;
                     overflow: hidden;
                     background: #fafafa;
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
                 }
                 #graph {
                     width: 100vw;
                     height: 100vh;
+                    height: -webkit-fill-available;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
                 }
                 .node {
                     cursor: pointer;
@@ -429,12 +458,29 @@ struct D3WebView: NSViewRepresentable {
     }
 }
 #else
+// Custom WKWebView that ignores safe area insets
+class FullscreenWKWebView: WKWebView {
+    override var safeAreaInsets: UIEdgeInsets {
+        return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Force the scroll view to match our bounds exactly
+        scrollView.frame = bounds
+    }
+
+    override var intrinsicContentSize: CGSize {
+        return UIScreen.main.bounds.size
+    }
+}
+
 // MARK: - iOS Implementation
 struct D3WebView: UIViewRepresentable {
     let nodes: [GraphNode]
     let links: [GraphLink]
 
-    func makeUIView(context: Context) -> WKWebView {
+    func makeUIView(context: Context) -> FullscreenWKWebView {
         // Configure WebView for better debugging and no caching
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
@@ -442,13 +488,21 @@ struct D3WebView: UIViewRepresentable {
         // Add message handler for opening URLs
         configuration.userContentController.add(context.coordinator, name: "openURL")
 
-        let webView = WKWebView(frame: .zero, configuration: configuration)
+        // Use custom fullscreen webview that ignores safe areas
+        let webView = FullscreenWKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.scrollView.bounces = false
+        webView.scrollView.alwaysBounceVertical = false
+        webView.scrollView.alwaysBounceHorizontal = false
+        webView.isOpaque = false
+        webView.backgroundColor = .clear
+        webView.scrollView.backgroundColor = .clear
 
         return webView
     }
 
-    func updateUIView(_ uiView: WKWebView, context: Context) {
+    func updateUIView(_ uiView: FullscreenWKWebView, context: Context) {
         // Clear any existing content first
         uiView.loadHTMLString("", baseURL: nil)
 
@@ -457,6 +511,12 @@ struct D3WebView: UIViewRepresentable {
             let html = generateHTML(nodes: nodes, links: links)
             uiView.loadHTMLString(html, baseURL: nil)
         }
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: FullscreenWKWebView, context: Context) -> CGSize? {
+        // Return the screen size to ensure fullscreen
+        return CGSize(width: proposal.width ?? UIScreen.main.bounds.width,
+                     height: proposal.height ?? UIScreen.main.bounds.height)
     }
 
     func makeCoordinator() -> Coordinator {

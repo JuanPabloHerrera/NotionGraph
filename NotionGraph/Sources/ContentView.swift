@@ -5,6 +5,100 @@ struct ContentView: View {
     @State private var showingSettings = false
 
     var body: some View {
+        #if os(iOS)
+        ZStack(alignment: .topTrailing) {
+            Color.clear
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ignoresSafeArea(.all)
+
+            if notionService.isLoading {
+                ProgressView("Loading Notion database...")
+            } else if let error = notionService.error {
+                VStack(spacing: 16) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 48))
+                        .foregroundColor(.orange)
+                    Text("Error")
+                        .font(.headline)
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                    Button("Retry") {
+                        Task {
+                            await notionService.fetchDatabase()
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding()
+            } else if notionService.nodes.isEmpty {
+                VStack(spacing: 16) {
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.system(size: 48))
+                        .foregroundColor(.gray)
+                    Text("No data")
+                        .font(.headline)
+                    Text("Configure your Notion API key and database ID in settings")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                    Button("Settings") {
+                        showingSettings = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding()
+            } else {
+                KnowledgeGraphView(nodes: notionService.nodes, links: notionService.links)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            // Floating buttons overlay - always on top
+            VStack {
+                HStack {
+                    Spacer()
+                    HStack(spacing: 12) {
+                        Button {
+                            Task {
+                                await notionService.fetchDatabase()
+                            }
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
+                                .background(Color.black.opacity(0.6))
+                                .clipShape(Circle())
+                        }
+                        .disabled(notionService.isLoading)
+
+                        Button {
+                            showingSettings = true
+                        } label: {
+                            Image(systemName: "gear")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
+                                .background(Color.black.opacity(0.6))
+                                .clipShape(Circle())
+                        }
+                    }
+                    .padding(.top, 60)
+                    .padding(.trailing, 16)
+                }
+                Spacer()
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .edgesIgnoringSafeArea(.all)
+        .sheet(isPresented: $showingSettings) {
+            SettingsView(notionService: notionService)
+        }
+        .task {
+            await notionService.fetchDatabase()
+        }
+        #else
         NavigationStack {
             VStack {
                 if notionService.isLoading {
@@ -50,10 +144,8 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("Notion Knowledge Graph")
-            #if os(macOS)
             .navigationSubtitle("")
             .toolbarBackground(Color(hex: "#fafafa"), for: .windowToolbar)
-            #endif
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -80,6 +172,7 @@ struct ContentView: View {
         .task {
             await notionService.fetchDatabase()
         }
+        #endif
     }
 }
 

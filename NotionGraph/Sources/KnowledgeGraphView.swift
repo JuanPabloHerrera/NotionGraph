@@ -69,10 +69,65 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
                 #debug-overlay {
                     display: none;  /* Hidden for clean minimalist view */
                 }
+
+                /* Context Menu Styles - shadcn inspired */
+                #context-menu {
+                    position: fixed;
+                    display: none;
+                    z-index: 1000;
+                    background: white;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                    padding: 4px;
+                    min-width: 180px;
+                }
+
+                .menu-button {
+                    display: flex;
+                    align-items: center;
+                    width: 100%;
+                    padding: 8px 12px;
+                    border: none;
+                    background: white;
+                    color: #37352f;
+                    font-size: 13px;
+                    font-weight: 400;
+                    text-align: left;
+                    cursor: pointer;
+                    border-radius: 4px;
+                    transition: background-color 0.15s ease;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                }
+
+                .menu-button:hover {
+                    background: #f5f5f5;
+                }
+
+                .menu-button:active {
+                    background: #e5e7eb;
+                }
+
+                .menu-button.disabled {
+                    color: #9ca3af;
+                    cursor: not-allowed;
+                }
+
+                .menu-button.disabled:hover {
+                    background: white;
+                }
             </style>
         </head>
         <body>
             <div id="debug-overlay"></div>
+            <div id="context-menu">
+                <button class="menu-button disabled" id="local-graph-btn">
+                    Open Local Graph
+                </button>
+                <button class="menu-button" id="open-notion-btn">
+                    Open in Notion
+                </button>
+            </div>
             <div id="graph"></div>
             <script src="https://d3js.org/d3.v7.min.js"></script>
             <script>
@@ -132,13 +187,36 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
                     .style("stroke-opacity", "0.6");
 
                 // Create nodes SECOND (so they draw on top of links)
+                // Context menu state
+                let currentNode = null;
+                const contextMenu = document.getElementById('context-menu');
+                const localGraphBtn = document.getElementById('local-graph-btn');
+                const openNotionBtn = document.getElementById('open-notion-btn');
+
                 const node = g.append("g")
                     .attr("class", "nodes")
                     .selectAll("g")
                     .data(data.nodes)
                     .join("g")
                     .attr("class", "node")
-                    .call(drag(simulation));
+                    .call(drag(simulation))
+                    .on("click", (event, d) => {
+                        // Only show menu for page nodes, not tags
+                        if (d.type === "page" && d.url) {
+                            event.stopPropagation();
+                            currentNode = d;
+
+                            // Get click position on the page
+                            const x = event.pageX || event.clientX;
+                            const y = event.pageY || event.clientY;
+
+                            // Position and show menu
+                            contextMenu.style.left = x + 'px';
+                            contextMenu.style.top = y + 'px';
+                            contextMenu.style.display = 'block';
+                        }
+                    })
+                    .style("cursor", d => d.type === "page" ? "pointer" : "default");
 
                 node.append("circle")
                     .attr("r", 5)
@@ -254,6 +332,42 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
                     svg.attr("width", newWidth).attr("height", newHeight)
                        .attr("viewBox", [0, 0, newWidth, newHeight]);
                 });
+
+                // Context menu button handlers
+                openNotionBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    if (currentNode && currentNode.url) {
+                        // Send message to Swift to open URL in default browser
+                        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.openURL) {
+                            window.webkit.messageHandlers.openURL.postMessage(currentNode.url);
+                        } else {
+                            // Fallback for platforms without message handler
+                            window.open(currentNode.url, '_blank');
+                        }
+                    }
+                    contextMenu.style.display = 'none';
+                });
+
+                localGraphBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    // TODO: Implement local graph view
+                    // For now, just hide the menu
+                    contextMenu.style.display = 'none';
+                });
+
+                // Hide menu when clicking elsewhere
+                document.addEventListener('click', (event) => {
+                    if (contextMenu.style.display === 'block' && !contextMenu.contains(event.target)) {
+                        contextMenu.style.display = 'none';
+                    }
+                });
+
+                // Hide menu when pressing Escape
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && contextMenu.style.display === 'block') {
+                        contextMenu.style.display = 'none';
+                    }
+                });
             </script>
         </body>
         </html>
@@ -270,6 +384,9 @@ struct D3WebView: NSViewRepresentable {
         // Configure WebView for better debugging and no caching
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
+
+        // Add message handler for opening URLs
+        configuration.userContentController.add(context.coordinator, name: "openURL")
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
@@ -297,9 +414,17 @@ struct D3WebView: NSViewRepresentable {
         Coordinator()
     }
 
-    class Coordinator: NSObject, WKNavigationDelegate {
+    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             // Graph loaded
+        }
+
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if message.name == "openURL", let urlString = message.body as? String {
+                if let url = URL(string: urlString) {
+                    NSWorkspace.shared.open(url)
+                }
+            }
         }
     }
 }
@@ -313,6 +438,9 @@ struct D3WebView: UIViewRepresentable {
         // Configure WebView for better debugging and no caching
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
+
+        // Add message handler for opening URLs
+        configuration.userContentController.add(context.coordinator, name: "openURL")
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
@@ -335,9 +463,19 @@ struct D3WebView: UIViewRepresentable {
         Coordinator()
     }
 
-    class Coordinator: NSObject, WKNavigationDelegate {
+    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             // Graph loaded
+        }
+
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if message.name == "openURL", let urlString = message.body as? String {
+                if let url = URL(string: urlString) {
+                    #if os(iOS)
+                    UIApplication.shared.open(url)
+                    #endif
+                }
+            }
         }
     }
 }

@@ -230,7 +230,8 @@ class NotionService: ObservableObject {
                 id: page.id,
                 name: page.title,
                 type: "page",
-                group: index % 10 + 1 // Distribute across groups for coloring
+                group: index % 10 + 1, // Distribute across groups for coloring
+                url: page.url
             )
             graphNodes.append(node)
         }

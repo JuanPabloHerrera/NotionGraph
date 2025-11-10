@@ -5,12 +5,14 @@ struct GraphNode: Identifiable, Codable {
     let name: String
     let type: String?
     var group: Int
+    let url: String?
 
-    init(id: String, name: String, type: String? = nil, group: Int = 1) {
+    init(id: String, name: String, type: String? = nil, group: Int = 1, url: String? = nil) {
         self.id = id
         self.name = name
         self.type = type
         self.group = group
+        self.url = url
     }
 }
 
@@ -40,6 +42,7 @@ struct NotionDatabase: Codable {
 
 struct NotionPage: Codable {
     let id: String
+    let url: String
     let properties: [String: NotionProperty]
 
     var title: String {

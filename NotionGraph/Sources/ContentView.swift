@@ -19,12 +19,15 @@ struct ContentView: View {
             if notionService.isLoading {
                 VStack {
                     Spacer()
-                    VStack(spacing: 16) {
-                        ProgressView()
-                            .scaleEffect(1.2)
-                        Text("Loading your graph...")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                    VStack(spacing: 12) {
+                        Text("\(Int(notionService.loadingProgress * 100))%")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.gray.opacity(0.6))
+
+                        // Progress bar with actual progress
+                        ProgressView(value: notionService.loadingProgress, total: 1.0)
+                            .progressViewStyle(.linear)
+                            .frame(width: 200)
                     }
                     .frame(maxWidth: .infinity)
                     Spacer()
@@ -73,39 +76,20 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity)
             } else if let error = notionService.error {
-                // Show error page only for actual connection errors
+                // Show error page
                 VStack {
                     Spacer()
-                    VStack(spacing: 20) {
-                        Image(systemName: "exclamationmark.circle")
-                            .font(.system(size: 56, weight: .light))
-                            .foregroundColor(.orange)
-
-                        VStack(spacing: 8) {
-                            Text("Connection Error")
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                            Text(error)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 32)
+                    Button {
+                        Task {
+                            await notionService.loadGraphData()
                         }
-
-                        Button {
-                            Task {
-                                await notionService.loadGraphData()
-                            }
-                        } label: {
-                            Text("Try Again")
-                                .fontWeight(.medium)
-                                .padding(.horizontal, 24)
-                                .padding(.vertical, 10)
-                        }
-                        .buttonStyle(.borderedProminent)
+                    } label: {
+                        Text("Open Graph")
+                            .fontWeight(.medium)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
+                    .buttonStyle(.borderedProminent)
                     Spacer()
                 }
                 .frame(maxWidth: .infinity)
@@ -223,12 +207,15 @@ struct ContentView: View {
                 if notionService.isLoading {
                     VStack {
                         Spacer()
-                        VStack(spacing: 16) {
-                            ProgressView()
-                                .scaleEffect(1.2)
-                            Text("Loading your graph...")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+                        VStack(spacing: 12) {
+                            Text("\(Int(notionService.loadingProgress * 100))%")
+                                .font(.system(size: 14))
+                                .foregroundColor(Color.gray.opacity(0.6))
+
+                            // Progress bar with actual progress
+                            ProgressView(value: notionService.loadingProgress, total: 1.0)
+                                .progressViewStyle(.linear)
+                                .frame(width: 200)
                         }
                         Spacer()
                     }
@@ -275,38 +262,20 @@ struct ContentView: View {
                     }
                     .frame(maxWidth: .infinity)
                 } else if let error = notionService.error {
-                    // Show error page only for actual connection errors
+                    // Show error page
                     VStack {
                         Spacer()
-                        VStack(spacing: 20) {
-                            Image(systemName: "exclamationmark.circle")
-                                .font(.system(size: 56, weight: .light))
-                                .foregroundColor(.orange)
-
-                            VStack(spacing: 8) {
-                                Text("Connection Error")
-                                    .font(.title3)
-                                    .fontWeight(.semibold)
-                                Text(error)
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 32)
+                        Button {
+                            Task {
+                                await notionService.loadGraphData()
                             }
-
-                            Button {
-                                Task {
-                                    await notionService.loadGraphData()
-                                }
-                            } label: {
-                                Text("Try Again")
-                                    .fontWeight(.medium)
-                                    .padding(.horizontal, 24)
-                                    .padding(.vertical, 10)
-                            }
-                            .buttonStyle(.borderedProminent)
+                        } label: {
+                            Text("Open Graph")
+                                .fontWeight(.medium)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 10)
                         }
-                        .padding()
+                        .buttonStyle(.borderedProminent)
                         Spacer()
                     }
                 } else if notionService.nodes.isEmpty {

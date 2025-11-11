@@ -10,6 +10,8 @@ class NotionService: ObservableObject {
     @Published var lastSyncDate: Date?
     @Published var isOfflineMode = false
     @Published var isSyncingInBackground = false
+    @Published var loadingProgress: Double = 0.0
+    @Published var totalNodesToLoad: Int = 0
 
     @AppStorage("notionApiKey") var apiKey: String = ""
     @AppStorage("notionDatabaseId") var databaseId: String = ""
@@ -28,17 +30,23 @@ class NotionService: ObservableObject {
     /// 2. Syncs from Notion API in background (if online) - Updates when ready
     func loadGraphData() async {
         // STEP 1: Load from cache IMMEDIATELY (instant display!)
-        await loadFromCache()
+        let hasCache = await loadFromCache()
 
-        // STEP 2: Sync from API in TRUE BACKGROUND (non-blocking)
+        // STEP 2: Decide sync strategy based on cache availability
         if networkMonitor?.isConnected ?? true {
-            print("🔄 Starting background sync...")
-            // Fire-and-forget background sync - doesn't block UI
-            Task {
-                isSyncingInBackground = true
-                await fetchDatabase(isBackgroundSync: true)
-                isSyncingInBackground = false
-                print("✅ Background sync completed")
+            if hasCache {
+                // Has cache: Do background sync (subtle indicator)
+                print("🔄 Starting background sync...")
+                Task {
+                    isSyncingInBackground = true
+                    await fetchDatabase(isBackgroundSync: true)
+                    isSyncingInBackground = false
+                    print("✅ Background sync completed")
+                }
+            } else {
+                // No cache: Do FULL load with loading screen
+                print("📥 No cache - doing full load with loading screen")
+                await fetchDatabase(isBackgroundSync: false)
             }
         } else {
             print("📴 Offline - showing cached data only")
@@ -48,8 +56,8 @@ class NotionService: ObservableObject {
 
     // MARK: - Load from Cache
 
-    private func loadFromCache() async {
-        guard let cacheService = cacheService else { return }
+    private func loadFromCache() async -> Bool {
+        guard let cacheService = cacheService else { return false }
 
         do {
             let (cachedNodes, cachedLinks, lastSync) = try cacheService.loadGraphData()
@@ -59,11 +67,14 @@ class NotionService: ObservableObject {
                 self.links = cachedLinks
                 self.lastSyncDate = lastSync
                 print("✅ Loaded from cache: \(cachedNodes.count) nodes, \(cachedLinks.count) links")
+                return true
             } else {
                 print("ℹ️ No cached data available")
+                return false
             }
         } catch {
             print("⚠️ Error loading from cache: \(error)")
+            return false
         }
     }
 
@@ -82,6 +93,7 @@ class NotionService: ObservableObject {
         // Only show full loading screen if NOT background sync
         if !isBackgroundSync {
             isLoading = true
+            loadingProgress = 0.0
         }
         error = nil
 
@@ -102,6 +114,10 @@ class NotionService: ObservableObject {
             // Empty body for now, but can be extended for filtering
             request.httpBody = try JSONEncoder().encode(["page_size": 100])
 
+            if !isBackgroundSync {
+                loadingProgress = 0.1 // Fetching database...
+            }
+
             let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
@@ -119,29 +135,36 @@ class NotionService: ObservableObject {
 
             print("✅ Fetched \(database.results.count) pages from database")
 
+            if !isBackgroundSync {
+                loadingProgress = 0.3 // Pages fetched
+                totalNodesToLoad = database.results.count
+            }
+
             // Fetch content blocks for each page to find page mentions
-            await fetchPageContent(for: database.results)
+            await fetchPageContent(for: database.results, isBackgroundSync: isBackgroundSync)
 
             // Only clear loading state if NOT background sync
             if !isBackgroundSync {
+                loadingProgress = 1.0
                 isLoading = false
             }
         } catch {
             self.error = error.localizedDescription
             if !isBackgroundSync {
+                loadingProgress = 0.0
                 isLoading = false
             }
         }
     }
 
-    private func fetchPageContent(for pages: [NotionPage]) async {
+    private func fetchPageContent(for pages: [NotionPage], isBackgroundSync: Bool) async {
         var allMentions: [(sourceId: String, targetId: String)] = []
         let trimmedApiKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
 
         print("📝 Fetching page content for \(pages.count) pages to find mentions...")
 
         // Fetch blocks for each page to find page mentions
-        for page in pages {
+        for (index, page) in pages.enumerated() {
             do {
                 let url = URL(string: "\(baseURL)/blocks/\(page.id)/children")!
                 var request = URLRequest(url: url)
@@ -169,6 +192,12 @@ class NotionService: ObservableObject {
                             allMentions.append((sourceId: page.id, targetId: mentionId))
                         }
                     }
+                }
+
+                // Update progress (from 0.3 to 0.7)
+                if !isBackgroundSync && !pages.isEmpty {
+                    let progress = 0.3 + (0.4 * Double(index + 1) / Double(pages.count))
+                    loadingProgress = progress
                 }
             } catch {
                 print("❌ Error fetching blocks for page \(page.title): \(error)")
@@ -279,6 +308,8 @@ class NotionService: ObservableObject {
         var graphLinks: [GraphLink] = []
 
         print("\n📊 Processing \(pages.count) pages and \(mentions.count) mentions...")
+
+        loadingProgress = 0.75 // Processing data...
 
         // Collect all unique tags
         var uniqueTags = Set<String>()

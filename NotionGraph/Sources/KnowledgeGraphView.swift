@@ -419,18 +419,23 @@ fileprivate func generateHTMLWithData(_ jsonString: String, isLocalGraphMode: Bo
                         // Find all nodes connected to the dragged node (level 1 connections)
                         const draggedNodeId = event.subject.id;
                         const connectedNodeIds = new Set([draggedNodeId]);
+                        const connectedLinkIndices = new Set();
 
-                        data.links.forEach(link => {
+                        data.links.forEach((link, index) => {
                             if (link.source.id === draggedNodeId) {
                                 connectedNodeIds.add(link.target.id);
+                                connectedLinkIndices.add(index);
                             } else if (link.target.id === draggedNodeId) {
                                 connectedNodeIds.add(link.source.id);
+                                connectedLinkIndices.add(index);
                             }
                         });
 
-                        // Set opacity to 0.5 for all nodes except dragged node and its connections
-                        node.style("opacity", d => connectedNodeIds.has(d.id) ? 1 : 0.5);
-                        link.style("opacity", 0.5);
+                        // Set opacity to 1.0 for dragged node and level 1 connected nodes/tags, 0.1 for others
+                        node.style("opacity", d => connectedNodeIds.has(d.id) ? 1 : 0.1);
+
+                        // Set opacity to 1.0 for links connecting to dragged node, 0.1 for others
+                        link.style("opacity", (d, i) => connectedLinkIndices.has(i) ? 1 : 0.1);
                     }
 
                     function dragged(event) {

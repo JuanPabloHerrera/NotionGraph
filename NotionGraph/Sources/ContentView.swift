@@ -209,41 +209,24 @@ struct ContentView: View {
             // Floating buttons overlay - always on top
             VStack {
                 HStack {
-                    // Status badge on the left
-                    if !notionService.nodes.isEmpty {
-                        StatusBadge(
-                            isOffline: notionService.isOfflineMode,
-                            lastSyncDate: notionService.lastSyncDate,
-                            isConnected: networkMonitor.isConnected,
-                            isSyncingInBackground: notionService.isSyncingInBackground
-                        )
-                        .padding(.top, 60)
-                        .padding(.leading, 16)
-                    }
-
                     Spacer()
 
                     HStack(spacing: 12) {
-                        Button {
-                            if isLocalGraphMode {
+                        // Only show back button in local graph mode
+                        if isLocalGraphMode {
+                            Button {
                                 // Return to full graph
                                 isLocalGraphMode = false
                                 localGraphCenterNodeId = nil
-                            } else {
-                                // Refresh graph data
-                                Task {
-                                    await notionService.loadGraphData()
-                                }
+                            } label: {
+                                Image(systemName: "arrow.left")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .frame(width: 44, height: 44)
+                                    .background(Color.black.opacity(0.6))
+                                    .clipShape(Circle())
                             }
-                        } label: {
-                            Image(systemName: isLocalGraphMode ? "arrow.left" : "arrow.clockwise")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white)
-                                .frame(width: 44, height: 44)
-                                .background(Color.black.opacity(0.6))
-                                .clipShape(Circle())
                         }
-                        .disabled(!isLocalGraphMode && notionService.isLoading)
 
                         Button {
                             showingSettings = true
@@ -412,39 +395,25 @@ struct ContentView: View {
             .navigationSubtitle("")
             .toolbarBackground(Color(hex: "#fafafa"), for: .windowToolbar)
             .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    if !notionService.nodes.isEmpty {
-                        StatusBadge(
-                            isOffline: notionService.isOfflineMode,
-                            lastSyncDate: notionService.lastSyncDate,
-                            isConnected: networkMonitor.isConnected,
-                            isSyncingInBackground: notionService.isSyncingInBackground
-                        )
+                // Back button to the left of settings (only in local graph mode)
+                if isLocalGraphMode {
+                    ToolbarItem(placement: .automatic) {
+                        Button {
+                            // Return to full graph
+                            isLocalGraphMode = false
+                            localGraphCenterNodeId = nil
+                        } label: {
+                            Image(systemName: "arrow.left")
+                        }
                     }
                 }
+                // Settings button - rightmost position
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showingSettings = true
                     } label: {
                         Image(systemName: "gear")
                     }
-                }
-                ToolbarItem(placement: .automatic) {
-                    Button {
-                        if isLocalGraphMode {
-                            // Return to full graph
-                            isLocalGraphMode = false
-                            localGraphCenterNodeId = nil
-                        } else {
-                            // Refresh graph data
-                            Task {
-                                await notionService.loadGraphData()
-                            }
-                        }
-                    } label: {
-                        Image(systemName: isLocalGraphMode ? "arrow.left" : "arrow.clockwise")
-                    }
-                    .disabled(!isLocalGraphMode && notionService.isLoading)
                 }
             }
             .sheet(isPresented: $showingSettings) {

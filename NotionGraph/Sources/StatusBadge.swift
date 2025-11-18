@@ -9,48 +9,36 @@ struct StatusBadge: View {
     @State private var rotationAngle: Double = 0
 
     var body: some View {
-        HStack(spacing: 6) {
-            // Connection status indicator
+        // Icon-only status indicator with circular style matching settings button
+        Group {
             if isSyncingInBackground {
                 // Rotating sync indicator
                 Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 10))
-                    .foregroundColor(.blue)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
                     .rotationEffect(.degrees(rotationAngle))
                     .onAppear {
                         withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
                             rotationAngle = 360
                         }
                     }
-            } else {
-                Circle()
-                    .fill(isOffline ? Color.orange : (isConnected ? Color.green : Color.red))
-                    .frame(width: 8, height: 8)
-            }
-
-            // Status text
-            if isSyncingInBackground {
-                Text("Syncing...")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
             } else if isOffline {
-                Text("Offline")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            } else if let lastSync = lastSyncDate {
-                Text("Synced \(timeAgoString(from: lastSync))")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                Image(systemName: "wifi.slash")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+            } else if isConnected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
             } else {
-                Text("Online")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
+        .frame(width: 44, height: 44)
         .background(Color.black.opacity(0.6))
-        .cornerRadius(12)
+        .clipShape(Circle())
     }
 
     private func timeAgoString(from date: Date) -> String {

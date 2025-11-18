@@ -4,16 +4,34 @@ import WebKit
 struct KnowledgeGraphView: View {
     let nodes: [GraphNode]
     let links: [GraphLink]
+    let isLocalGraphMode: Bool
+    let centerNodeId: String?
+    let onOpenLocalGraph: (String) -> Void
+    let onReturnToFullGraph: () -> Void
 
     var body: some View {
         #if os(macOS)
-        D3WebView(nodes: nodes, links: links)
-            .ignoresSafeArea(edges: .bottom)
+        D3WebView(
+            nodes: nodes,
+            links: links,
+            isLocalGraphMode: isLocalGraphMode,
+            centerNodeId: centerNodeId,
+            onOpenLocalGraph: onOpenLocalGraph,
+            onReturnToFullGraph: onReturnToFullGraph
+        )
+        .ignoresSafeArea(edges: .bottom)
         #else
         GeometryReader { geometry in
-            D3WebView(nodes: nodes, links: links)
-                .frame(width: geometry.size.width, height: geometry.size.height)
-                .edgesIgnoringSafeArea(.all)
+            D3WebView(
+                nodes: nodes,
+                links: links,
+                isLocalGraphMode: isLocalGraphMode,
+                centerNodeId: centerNodeId,
+                onOpenLocalGraph: onOpenLocalGraph,
+                onReturnToFullGraph: onReturnToFullGraph
+            )
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .edgesIgnoringSafeArea(.all)
         }
         .edgesIgnoringSafeArea(.all)
         #endif
@@ -32,20 +50,21 @@ fileprivate func loadD3Library() -> String {
 }
 
 // Shared HTML generation logic for both platforms
-fileprivate func generateHTML(nodes: [GraphNode], links: [GraphLink]) -> String {
+fileprivate func generateHTML(nodes: [GraphNode], links: [GraphLink], isLocalGraphMode: Bool, centerNodeId: String?) -> String {
     let graphData = GraphData(nodes: nodes, links: links)
 
     // Safely encode the graph data
     guard let jsonData = try? JSONEncoder().encode(graphData),
           let jsonString = String(data: jsonData, encoding: .utf8) else {
         // Return empty graph if encoding fails
-        return generateHTMLWithData("{\"nodes\":[],\"links\":[]}")
+        return generateHTMLWithData("{\"nodes\":[],\"links\":[]}", isLocalGraphMode: isLocalGraphMode, centerNodeId: centerNodeId)
     }
 
-    return generateHTMLWithData(jsonString)
+    return generateHTMLWithData(jsonString, isLocalGraphMode: isLocalGraphMode, centerNodeId: centerNodeId)
 }
 
-fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
+fileprivate func generateHTMLWithData(_ jsonString: String, isLocalGraphMode: Bool, centerNodeId: String?) -> String {
+    let centerNodeIdJS = centerNodeId.map { "\"\($0)\"" } ?? "null"
     return """
         <!DOCTYPE html>
         <html>
@@ -156,12 +175,21 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
                 .menu-button.disabled:hover {
                     background: white;
                 }
+
+                /* Return button for local graph mode - hidden, using top button instead */
+                #return-button {
+                    display: none;
+                }
             </style>
         </head>
         <body>
+            <button id="return-button">
+                <span style="font-size: 16px;">←</span>
+                <span>Return to Full Graph</span>
+            </button>
             <div id="debug-overlay"></div>
             <div id="context-menu">
-                <button class="menu-button disabled" id="local-graph-btn">
+                <button class="menu-button" id="local-graph-btn">
                     Open Local Graph
                 </button>
                 <button class="menu-button" id="open-notion-btn">
@@ -172,6 +200,7 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
             \(loadD3Library())
             <script>
                 const data = \(jsonString);
+                const centerNodeId = \(centerNodeIdJS);
 
                 const width = window.innerWidth;
                 const height = window.innerHeight;
@@ -290,8 +319,18 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
 
                 node.append("circle")
                     .attr("r", 5)
-                    .attr("fill", d => d.type === "tag" ? "#d1d5db" : "#9ca3af")  // Light gray for tags
-                    .attr("stroke", d => d.type === "tag" ? "#9ca3af" : "#6b7280")
+                    .attr("fill", d => {
+                        if (centerNodeId && d.id === centerNodeId) {
+                            return "#000000";  // Black for center node
+                        }
+                        return d.type === "tag" ? "#d1d5db" : "#9ca3af";  // Light gray for tags, dark gray for others
+                    })
+                    .attr("stroke", d => {
+                        if (centerNodeId && d.id === centerNodeId) {
+                            return "#000000";  // Black stroke for center node
+                        }
+                        return d.type === "tag" ? "#9ca3af" : "#6b7280";
+                    })
                     .attr("stroke-width", 1);
 
                 nodeText = node.append("text")
@@ -376,6 +415,22 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
                         if (!event.active) simulation.alphaTarget(0.1).restart();  // Reduced from 0.3 for smoother movement
                         event.subject.fx = event.subject.x;
                         event.subject.fy = event.subject.y;
+
+                        // Find all nodes connected to the dragged node (level 1 connections)
+                        const draggedNodeId = event.subject.id;
+                        const connectedNodeIds = new Set([draggedNodeId]);
+
+                        data.links.forEach(link => {
+                            if (link.source.id === draggedNodeId) {
+                                connectedNodeIds.add(link.target.id);
+                            } else if (link.target.id === draggedNodeId) {
+                                connectedNodeIds.add(link.source.id);
+                            }
+                        });
+
+                        // Set opacity to 0.5 for all nodes except dragged node and its connections
+                        node.style("opacity", d => connectedNodeIds.has(d.id) ? 1 : 0.5);
+                        link.style("opacity", 0.5);
                     }
 
                     function dragged(event) {
@@ -387,6 +442,10 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
                         if (!event.active) simulation.alphaTarget(0);
                         event.subject.fx = null;
                         event.subject.fy = null;
+
+                        // Restore full opacity to all nodes and links
+                        node.style("opacity", 1);
+                        link.style("opacity", 1);
                     }
 
                     return d3.drag()
@@ -421,11 +480,27 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
 
                 localGraphBtn.addEventListener('click', (event) => {
                     event.stopPropagation();
-                    // TODO: Implement local graph view
-                    // For now, just hide the menu
+                    if (currentNode && currentNode.id) {
+                        // Send message to Swift to open local graph
+                        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.openLocalGraph) {
+                            window.webkit.messageHandlers.openLocalGraph.postMessage(currentNode.id);
+                        }
+                    }
                     contextMenu.style.display = 'none';
                     contextMenu.style.visibility = 'visible';
                 });
+
+                // Return button handler
+                const returnButton = document.getElementById('return-button');
+                if (returnButton) {
+                    returnButton.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        // Send message to Swift to return to full graph
+                        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.returnToFullGraph) {
+                            window.webkit.messageHandlers.returnToFullGraph.postMessage('return');
+                        }
+                    });
+                }
 
                 // Hide menu when clicking elsewhere
                 document.addEventListener('click', (event) => {
@@ -453,14 +528,20 @@ fileprivate func generateHTMLWithData(_ jsonString: String) -> String {
 struct D3WebView: NSViewRepresentable {
     let nodes: [GraphNode]
     let links: [GraphLink]
+    let isLocalGraphMode: Bool
+    let centerNodeId: String?
+    let onOpenLocalGraph: (String) -> Void
+    let onReturnToFullGraph: () -> Void
 
     func makeNSView(context: Context) -> WKWebView {
         // Configure WebView for better debugging and no caching
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
 
-        // Add message handler for opening URLs
+        // Add message handlers
         configuration.userContentController.add(context.coordinator, name: "openURL")
+        configuration.userContentController.add(context.coordinator, name: "openLocalGraph")
+        configuration.userContentController.add(context.coordinator, name: "returnToFullGraph")
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
@@ -474,21 +555,33 @@ struct D3WebView: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: WKWebView, context: Context) {
+        // Update coordinator callbacks
+        context.coordinator.onOpenLocalGraph = onOpenLocalGraph
+        context.coordinator.onReturnToFullGraph = onReturnToFullGraph
+
         // Clear any existing content first
         nsView.loadHTMLString("", baseURL: nil)
 
         // Small delay to ensure clean slate, then load new content
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            let html = generateHTML(nodes: nodes, links: links)
+            let html = generateHTML(nodes: nodes, links: links, isLocalGraphMode: isLocalGraphMode, centerNodeId: centerNodeId)
             nsView.loadHTMLString(html, baseURL: nil)
         }
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(onOpenLocalGraph: onOpenLocalGraph, onReturnToFullGraph: onReturnToFullGraph)
     }
 
     class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+        var onOpenLocalGraph: (String) -> Void
+        var onReturnToFullGraph: () -> Void
+
+        init(onOpenLocalGraph: @escaping (String) -> Void, onReturnToFullGraph: @escaping () -> Void) {
+            self.onOpenLocalGraph = onOpenLocalGraph
+            self.onReturnToFullGraph = onReturnToFullGraph
+        }
+
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             // Graph loaded
         }
@@ -498,6 +591,10 @@ struct D3WebView: NSViewRepresentable {
                 if let url = URL(string: urlString) {
                     NSWorkspace.shared.open(url)
                 }
+            } else if message.name == "openLocalGraph", let nodeId = message.body as? String {
+                onOpenLocalGraph(nodeId)
+            } else if message.name == "returnToFullGraph" {
+                onReturnToFullGraph()
             }
         }
     }
@@ -524,14 +621,20 @@ class FullscreenWKWebView: WKWebView {
 struct D3WebView: UIViewRepresentable {
     let nodes: [GraphNode]
     let links: [GraphLink]
+    let isLocalGraphMode: Bool
+    let centerNodeId: String?
+    let onOpenLocalGraph: (String) -> Void
+    let onReturnToFullGraph: () -> Void
 
     func makeUIView(context: Context) -> FullscreenWKWebView {
         // Configure WebView for better debugging and no caching
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
 
-        // Add message handler for opening URLs
+        // Add message handlers
         configuration.userContentController.add(context.coordinator, name: "openURL")
+        configuration.userContentController.add(context.coordinator, name: "openLocalGraph")
+        configuration.userContentController.add(context.coordinator, name: "returnToFullGraph")
 
         // Use custom fullscreen webview that ignores safe areas
         let webView = FullscreenWKWebView(frame: .zero, configuration: configuration)
@@ -548,12 +651,16 @@ struct D3WebView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: FullscreenWKWebView, context: Context) {
+        // Update coordinator callbacks
+        context.coordinator.onOpenLocalGraph = onOpenLocalGraph
+        context.coordinator.onReturnToFullGraph = onReturnToFullGraph
+
         // Clear any existing content first
         uiView.loadHTMLString("", baseURL: nil)
 
         // Small delay to ensure clean slate, then load new content
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            let html = generateHTML(nodes: nodes, links: links)
+            let html = generateHTML(nodes: nodes, links: links, isLocalGraphMode: isLocalGraphMode, centerNodeId: centerNodeId)
             uiView.loadHTMLString(html, baseURL: nil)
         }
     }
@@ -565,10 +672,18 @@ struct D3WebView: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(onOpenLocalGraph: onOpenLocalGraph, onReturnToFullGraph: onReturnToFullGraph)
     }
 
     class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+        var onOpenLocalGraph: (String) -> Void
+        var onReturnToFullGraph: () -> Void
+
+        init(onOpenLocalGraph: @escaping (String) -> Void, onReturnToFullGraph: @escaping () -> Void) {
+            self.onOpenLocalGraph = onOpenLocalGraph
+            self.onReturnToFullGraph = onReturnToFullGraph
+        }
+
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             // Graph loaded
         }
@@ -580,6 +695,10 @@ struct D3WebView: UIViewRepresentable {
                     UIApplication.shared.open(url)
                     #endif
                 }
+            } else if message.name == "openLocalGraph", let nodeId = message.body as? String {
+                onOpenLocalGraph(nodeId)
+            } else if message.name == "returnToFullGraph" {
+                onReturnToFullGraph()
             }
         }
     }

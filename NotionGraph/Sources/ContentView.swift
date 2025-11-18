@@ -5,9 +5,63 @@ struct ContentView: View {
     @StateObject private var notionService = NotionService()
     @State private var showingSettings = false
 
+    // Local graph state
+    @State private var isLocalGraphMode = false
+    @State private var localGraphCenterNodeId: String?
+
     // SwiftData and network monitoring
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var networkMonitor: NetworkMonitor
+
+    // Computed property for filtered nodes and links based on local graph mode
+    private var displayNodes: [GraphNode] {
+        guard isLocalGraphMode, let centerNodeId = localGraphCenterNodeId else {
+            return notionService.nodes
+        }
+        return filterNodesToDepth(centerNodeId: centerNodeId, maxDepth: 2)
+    }
+
+    private var displayLinks: [GraphLink] {
+        guard isLocalGraphMode, let centerNodeId = localGraphCenterNodeId else {
+            return notionService.links
+        }
+        let nodeIds = Set(displayNodes.map { $0.id })
+        return notionService.links.filter { link in
+            nodeIds.contains(link.source) && nodeIds.contains(link.target)
+        }
+    }
+
+    // Filter nodes to a specific depth from a center node using BFS
+    private func filterNodesToDepth(centerNodeId: String, maxDepth: Int) -> [GraphNode] {
+        var visitedNodes = Set<String>()
+        var nodesToVisit: [(id: String, depth: Int)] = [(centerNodeId, 0)]
+        var currentIndex = 0
+
+        // BFS to find all nodes within maxDepth
+        while currentIndex < nodesToVisit.count {
+            let (currentId, currentDepth) = nodesToVisit[currentIndex]
+            currentIndex += 1
+
+            if visitedNodes.contains(currentId) || currentDepth > maxDepth {
+                continue
+            }
+
+            visitedNodes.insert(currentId)
+
+            if currentDepth < maxDepth {
+                // Find all connected nodes
+                for link in notionService.links {
+                    if link.source == currentId && !visitedNodes.contains(link.target) {
+                        nodesToVisit.append((link.target, currentDepth + 1))
+                    } else if link.target == currentId && !visitedNodes.contains(link.source) {
+                        nodesToVisit.append((link.source, currentDepth + 1))
+                    }
+                }
+            }
+        }
+
+        return notionService.nodes.filter { visitedNodes.contains($0.id) }
+    }
 
     var body: some View {
         #if os(iOS)
@@ -135,8 +189,21 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity)
             } else {
-                KnowledgeGraphView(nodes: notionService.nodes, links: notionService.links)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                KnowledgeGraphView(
+                    nodes: displayNodes,
+                    links: displayLinks,
+                    isLocalGraphMode: isLocalGraphMode,
+                    centerNodeId: localGraphCenterNodeId,
+                    onOpenLocalGraph: { nodeId in
+                        localGraphCenterNodeId = nodeId
+                        isLocalGraphMode = true
+                    },
+                    onReturnToFullGraph: {
+                        isLocalGraphMode = false
+                        localGraphCenterNodeId = nil
+                    }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
             // Floating buttons overlay - always on top
@@ -158,18 +225,25 @@ struct ContentView: View {
 
                     HStack(spacing: 12) {
                         Button {
-                            Task {
-                                await notionService.loadGraphData()
+                            if isLocalGraphMode {
+                                // Return to full graph
+                                isLocalGraphMode = false
+                                localGraphCenterNodeId = nil
+                            } else {
+                                // Refresh graph data
+                                Task {
+                                    await notionService.loadGraphData()
+                                }
                             }
                         } label: {
-                            Image(systemName: "arrow.clockwise")
+                            Image(systemName: isLocalGraphMode ? "arrow.left" : "arrow.clockwise")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.white)
                                 .frame(width: 44, height: 44)
                                 .background(Color.black.opacity(0.6))
                                 .clipShape(Circle())
                         }
-                        .disabled(notionService.isLoading)
+                        .disabled(!isLocalGraphMode && notionService.isLoading)
 
                         Button {
                             showingSettings = true
@@ -318,7 +392,20 @@ struct ContentView: View {
                         Spacer()
                     }
                 } else {
-                    KnowledgeGraphView(nodes: notionService.nodes, links: notionService.links)
+                    KnowledgeGraphView(
+                        nodes: displayNodes,
+                        links: displayLinks,
+                        isLocalGraphMode: isLocalGraphMode,
+                        centerNodeId: localGraphCenterNodeId,
+                        onOpenLocalGraph: { nodeId in
+                            localGraphCenterNodeId = nodeId
+                            isLocalGraphMode = true
+                        },
+                        onReturnToFullGraph: {
+                            isLocalGraphMode = false
+                            localGraphCenterNodeId = nil
+                        }
+                    )
                 }
             }
             .navigationTitle("Notion Knowledge Graph")
@@ -344,13 +431,20 @@ struct ContentView: View {
                 }
                 ToolbarItem(placement: .automatic) {
                     Button {
-                        Task {
-                            await notionService.loadGraphData()
+                        if isLocalGraphMode {
+                            // Return to full graph
+                            isLocalGraphMode = false
+                            localGraphCenterNodeId = nil
+                        } else {
+                            // Refresh graph data
+                            Task {
+                                await notionService.loadGraphData()
+                            }
                         }
                     } label: {
-                        Image(systemName: "arrow.clockwise")
+                        Image(systemName: isLocalGraphMode ? "arrow.left" : "arrow.clockwise")
                     }
-                    .disabled(notionService.isLoading)
+                    .disabled(!isLocalGraphMode && notionService.isLoading)
                 }
             }
             .sheet(isPresented: $showingSettings) {
